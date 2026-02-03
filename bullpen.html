@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bullpen Tracker</title>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 1.2em; }
+        
+        .nav-links { display: flex; gap: 12px; }
+        .nav-links a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.85em; }
+        .nav-links a:hover { color: white; }
+        
+        .container { padding: 12px; max-width: 600px; margin: 0 auto; }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .section-title {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        /* Pitcher Selection */
+        .pitcher-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .pitcher-select select, .pitcher-select input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        
+        .pitcher-select select:focus, .pitcher-select input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Session Info */
+        .session-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .info-box {
+            background: #edf2f7;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .info-box .label { font-size: 0.7em; color: #718096; }
+        .info-box .value { font-size: 1.5em; font-weight: 700; color: var(--primary); }
+        
+        /* Velocity Input */
+        .velocity-section {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .velocity-input {
+            width: 80px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .velocity-label { font-size: 0.9em; color: #4a5568; }
+        
+        /* Pitch Type Grid */
+        .pitch-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .pitch-btn {
+            padding: 14px 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pitch-btn:active, .pitch-btn.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Command Rating */
+        .command-section {
+            margin-bottom: 12px;
+        }
+        
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        
+        .command-btn {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .command-btn:active, .command-btn.selected {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+        
+        .command-btn[data-cmd="1"], .command-btn[data-cmd="2"] { 
+            border-color: #fed7d7; 
+        }
+        .command-btn[data-cmd="1"]:active, .command-btn[data-cmd="1"].selected,
+        .command-btn[data-cmd="2"]:active, .command-btn[data-cmd="2"].selected { 
+            background: var(--accent); border-color: var(--accent); 
+        }
+        
+        .command-btn[data-cmd="4"], .command-btn[data-cmd="5"] { 
+            border-color: #c6f6d5; 
+        }
+        
+        /* Notes */
+        .notes-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: none;
+        }
+        
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .action-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .action-btn.secondary {
+            background: #e2e8f0;
+            color: var(--dark);
+        }
+        
+        .action-btn.success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .action-btn.danger {
+            background: var(--accent);
+            color: white;
+        }
+        
+        /* Pitch Log */
+        .pitch-log {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .pitch-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        
+        .pitch-entry:last-child { border-bottom: none; }
+        
+        .pitch-entry .pitch-num {
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .pitch-entry .pitch-info { flex: 1; margin-left: 12px; }
+        .pitch-entry .pitch-type { font-weight: 600; }
+        .pitch-entry .pitch-details { color: #718096; font-size: 12px; }
+        .pitch-entry .pitch-velo { font-weight: 700; color: var(--accent); }
+        
+        .cmd-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .cmd-badge.good { background: #c6f6d5; color: #22543d; }
+        .cmd-badge.ok { background: #fefcbf; color: #744210; }
+        .cmd-badge.poor { background: #fed7d7; color: #822727; }
+        
+        /* Sessions List */
+        .session-card {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .session-card h4 { font-size: 14px; margin-bottom: 4px; }
+        .session-card .meta { font-size: 12px; color: #718096; }
+        .session-card .stats { display: flex; gap: 16px; margin-top: 8px; font-size: 13px; }
+        .session-card .stat { }
+        .session-card .stat strong { color: var(--primary); }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.visible { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h3 { margin-bottom: 16px; }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .modal-buttons .cancel { background: #e2e8f0; }
+        .modal-buttons .save { background: var(--primary); color: white; }
+        
+        /* Settings */
+        .settings-row {
+            margin-bottom: 12px;
+        }
+        
+        .settings-row label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 4px;
+        }
+        
+        .settings-row input, .settings-row textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #4a5568;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 Bullpen Tracker</h1>
+        <div class="nav-links">
+            <a href="entry.html">Game</a>
+            <a href="coach.html">Coach</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="track">Track Session</button>
+            <button class="tab-btn" data-tab="history">History</button>
+            <button class="tab-btn" data-tab="reports">Reports</button>
+        </div>
+        
+        <!-- Track Session Tab -->
+        <div class="tab-content active" id="trackTab">
+            <div class="section">
+                <div class="section-title">Pitcher</div>
+                <div class="pitcher-select">
+                    <select id="pitcherSelect">
+                        <option value="">Select Pitcher...</option>
+                    </select>
+                    <button class="action-btn secondary" onclick="showAddPitcher()" style="flex: 0; padding: 12px 16px;">+</button>
+                </div>
+                
+                <div class="session-info">
+                    <div class="info-box">
+                        <div class="label">Pitches</div>
+                        <div class="value" id="pitchCount">0</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Avg Velo</div>
+                        <div class="value" id="avgVelo">--</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">Command</div>
+                        <div class="value" id="avgCmd">--</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Log Pitch</div>
+                
+                <div class="velocity-section">
+                    <span class="velocity-label">Velocity:</span>
+                    <input type="number" class="velocity-input" id="veloInput" placeholder="--" min="40" max="105">
+                    <span class="velocity-label">mph</span>
+                </div>
+                
+                <div class="section-title">Pitch Type</div>
+                <div class="pitch-grid">
+                    <button class="pitch-btn" data-pitch="FB">Fastball</button>
+                    <button class="pitch-btn" data-pitch="2S">2-Seam</button>
+                    <button class="pitch-btn" data-pitch="CT">Cutter</button>
+                    <button class="pitch-btn" data-pitch="SI">Sinker</button>
+                    <button class="pitch-btn" data-pitch="CB">Curve</button>
+                    <button class="pitch-btn" data-pitch="SL">Slider</button>
+                    <button class="pitch-btn" data-pitch="CH">Change</button>
+                    <button class="pitch-btn" data-pitch="SP">Splitter</button>
+                </div>
+                
+                <div class="section-title">Command (1-5)</div>
+                <div class="command-grid">
+                    <button class="command-btn" data-cmd="1">1</button>
+                    <button class="command-btn" data-cmd="2">2</button>
+                    <button class="command-btn" data-cmd="3">3</button>
+                    <button class="command-btn" data-cmd="4">4</button>
+                    <button class="command-btn" data-cmd="5">5</button>
+                </div>
+                <div style="font-size: 11px; color: #718096; margin-top: 4px; text-align: center;">
+                    1 = Missed badly &nbsp;|&nbsp; 3 = Okay &nbsp;|&nbsp; 5 = Perfect spot
+                </div>
+                
+                <div style="margin-top: 12px;">
+                    <textarea class="notes-input" id="pitchNotes" rows="2" placeholder="Notes (optional)..."></textarea>
+                </div>
+                
+                <div class="action-row" style="margin-top: 12px;">
+                    <button class="action-btn secondary" onclick="undoPitch()">↩️ Undo</button>
+                    <button class="action-btn primary" onclick="logPitch()">Log Pitch</button>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">This Session</div>
+                <div class="pitch-log" id="pitchLog">
+                    <div style="text-align: center; color: #a0aec0; padding: 20px;">
+                        No pitches logged yet
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="action-row">
+                    <button class="action-btn success" onclick="endSession()">✅ End Session</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Tab -->
+        <div class="tab-content" id="historyTab">
+            <div class="section">
+                <div class="section-title">Recent Sessions</div>
+                <div id="sessionsList">
+                    <div style="text-align: center; color: #a0aec0; padding: 20px;">
+                        No sessions recorded yet
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reports Tab -->
+        <div class="tab-content" id="reportsTab">
+            <div class="section">
+                <div class="section-title">Pitcher Report</div>
+                <select id="reportPitcher" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;">
+                    <option value="">Select Pitcher...</option>
+                </select>
+                <div id="pitcherReport"></div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Email Report to Coaches</div>
+                <div class="action-row">
+                    <button class="action-btn primary" onclick="emailReport()">📧 Email Report</button>
+                    <button class="action-btn secondary" onclick="showSettings()">⚙️ Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Pitcher Modal -->
+    <div class="modal" id="addPitcherModal">
+        <div class="modal-content">
+            <h3>Add Pitcher</h3>
+            <div class="settings-row">
+                <label>Name</label>
+                <input type="text" id="newPitcherName" placeholder="John Smith">
+            </div>
+            <div class="settings-row">
+                <label>Number</label>
+                <input type="text" id="newPitcherNumber" placeholder="21">
+            </div>
+            <div class="settings-row">
+                <label>Throws</label>
+                <select id="newPitcherThrows" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px;">
+                    <option value="R">Right</option>
+                    <option value="L">Left</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeModal('addPitcherModal')">Cancel</button>
+                <button class="save" onclick="savePitcher()">Add Pitcher</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>⚙️ Settings</h3>
+            <div class="settings-row">
+                <label>Coach Emails (one per line)</label>
+                <textarea id="coachEmails" rows="4" placeholder="coach@school.edu
+assistant@school.edu"></textarea>
+            </div>
+            <div class="settings-row">
+                <label>Team Name</label>
+                <input type="text" id="teamName" placeholder="Bingham Miners">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeModal('settingsModal')">Cancel</button>
+                <button class="save" onclick="saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// State
+let state = {
+    currentSession: {
+        pitcher: null,
+        date: new Date().toISOString().split('T')[0],
+        pitches: []
+    },
+    pitchers: [],
+    sessions: [],
+    settings: {
+        coachEmails: [],
+        teamName: ''
+    }
+};
+
+// Load data
+function loadData() {
+    const saved = localStorage.getItem('bullpenTracker');
+    if (saved) {
+        const data = JSON.parse(saved);
+        state.pitchers = data.pitchers || [];
+        state.sessions = data.sessions || [];
+        state.settings = data.settings || { coachEmails: [], teamName: '' };
+    }
+    updatePitcherDropdowns();
+    renderSessionsList();
+}
+
+function saveData() {
+    localStorage.setItem('bullpenTracker', JSON.stringify({
+        pitchers: state.pitchers,
+        sessions: state.sessions,
+        settings: state.settings
+    }));
+}
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
+    });
+});
+
+// Pitcher dropdown
+function updatePitcherDropdowns() {
+    const options = '<option value="">Select Pitcher...</option>' +
+        state.pitchers.map(p => `<option value="${p.name}">#${p.number} ${p.name} (${p.throws})</option>`).join('');
+    document.getElementById('pitcherSelect').innerHTML = options;
+    document.getElementById('reportPitcher').innerHTML = options;
+}
+
+document.getElementById('pitcherSelect').addEventListener('change', (e) => {
+    state.currentSession.pitcher = e.target.value;
+    state.currentSession.pitches = [];
+    updateSessionDisplay();
+});
+
+// Pitch type selection
+document.querySelectorAll('.pitch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.pitch-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    });
+});
+
+// Command selection
+document.querySelectorAll('.command-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.command-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    });
+});
+
+// Log pitch
+function logPitch() {
+    if (!state.currentSession.pitcher) {
+        alert('Please select a pitcher first');
+        return;
+    }
+    
+    const pitchType = document.querySelector('.pitch-btn.selected')?.dataset.pitch;
+    const command = document.querySelector('.command-btn.selected')?.dataset.cmd;
+    const velo = document.getElementById('veloInput').value;
+    const notes = document.getElementById('pitchNotes').value;
+    
+    if (!pitchType) {
+        alert('Please select a pitch type');
+        return;
+    }
+    
+    const pitch = {
+        num: state.currentSession.pitches.length + 1,
+        type: pitchType,
+        velo: velo ? parseInt(velo) : null,
+        command: command ? parseInt(command) : null,
+        notes: notes,
+        time: new Date().toLocaleTimeString()
+    };
+    
+    state.currentSession.pitches.push(pitch);
+    
+    // Clear inputs
+    document.querySelectorAll('.pitch-btn, .command-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('veloInput').value = '';
+    document.getElementById('pitchNotes').value = '';
+    
+    updateSessionDisplay();
+}
+
+function undoPitch() {
+    if (state.currentSession.pitches.length > 0) {
+        state.currentSession.pitches.pop();
+        updateSessionDisplay();
+    }
+}
+
+function updateSessionDisplay() {
+    const pitches = state.currentSession.pitches;
+    document.getElementById('pitchCount').textContent = pitches.length;
+    
+    // Avg velocity
+    const velos = pitches.filter(p => p.velo).map(p => p.velo);
+    if (velos.length > 0) {
+        const avg = Math.round(velos.reduce((a, b) => a + b, 0) / velos.length * 10) / 10;
+        document.getElementById('avgVelo').textContent = avg;
+    } else {
+        document.getElementById('avgVelo').textContent = '--';
+    }
+    
+    // Avg command
+    const cmds = pitches.filter(p => p.command).map(p => p.command);
+    if (cmds.length > 0) {
+        const avg = Math.round(cmds.reduce((a, b) => a + b, 0) / cmds.length * 10) / 10;
+        document.getElementById('avgCmd').textContent = avg;
+    } else {
+        document.getElementById('avgCmd').textContent = '--';
+    }
+    
+    // Pitch log
+    const logEl = document.getElementById('pitchLog');
+    if (pitches.length === 0) {
+        logEl.innerHTML = '<div style="text-align: center; color: #a0aec0; padding: 20px;">No pitches logged yet</div>';
+    } else {
+        logEl.innerHTML = pitches.slice().reverse().map(p => {
+            let cmdClass = 'ok';
+            if (p.command >= 4) cmdClass = 'good';
+            else if (p.command <= 2) cmdClass = 'poor';
+            
+            return `
+                <div class="pitch-entry">
+                    <div class="pitch-num">${p.num}</div>
+                    <div class="pitch-info">
+                        <span class="pitch-type">${getPitchName(p.type)}</span>
+                        ${p.command ? `<span class="cmd-badge ${cmdClass}">Cmd: ${p.command}</span>` : ''}
+                        ${p.notes ? `<div class="pitch-details">${p.notes}</div>` : ''}
+                    </div>
+                    ${p.velo ? `<div class="pitch-velo">${p.velo}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function getPitchName(code) {
+    const names = {
+        'FB': 'Fastball', '2S': '2-Seam', 'CT': 'Cutter', 'SI': 'Sinker',
+        'CB': 'Curveball', 'SL': 'Slider', 'CH': 'Changeup', 'SP': 'Splitter'
+    };
+    return names[code] || code;
+}
+
+// End session
+function endSession() {
+    if (!state.currentSession.pitcher || state.currentSession.pitches.length === 0) {
+        alert('No pitches to save');
+        return;
+    }
+    
+    const session = {
+        id: Date.now(),
+        pitcher: state.currentSession.pitcher,
+        date: state.currentSession.date,
+        pitches: [...state.currentSession.pitches],
+        summary: generateSessionSummary(state.currentSession.pitches)
+    };
+    
+    state.sessions.unshift(session);
+    saveData();
+    
+    // Reset
+    state.currentSession = {
+        pitcher: null,
+        date: new Date().toISOString().split('T')[0],
+        pitches: []
+    };
+    document.getElementById('pitcherSelect').value = '';
+    updateSessionDisplay();
+    renderSessionsList();
+    
+    alert('Session saved!');
+    
+    // Ask about emailing
+    if (state.settings.coachEmails.length > 0 && confirm('Email report to coaches?')) {
+        emailSessionReport(session);
+    }
+}
+
+function generateSessionSummary(pitches) {
+    const byType = {};
+    pitches.forEach(p => {
+        if (!byType[p.type]) byType[p.type] = { count: 0, velos: [], cmds: [] };
+        byType[p.type].count++;
+        if (p.velo) byType[p.type].velos.push(p.velo);
+        if (p.command) byType[p.type].cmds.push(p.command);
+    });
+    
+    const summary = {};
+    for (const [type, data] of Object.entries(byType)) {
+        summary[type] = {
+            count: data.count,
+            avgVelo: data.velos.length ? Math.round(data.velos.reduce((a,b) => a+b, 0) / data.velos.length * 10) / 10 : null,
+            maxVelo: data.velos.length ? Math.max(...data.velos) : null,
+            avgCmd: data.cmds.length ? Math.round(data.cmds.reduce((a,b) => a+b, 0) / data.cmds.length * 10) / 10 : null
+        };
+    }
+    return summary;
+}
+
+// Render sessions list
+function renderSessionsList() {
+    const el = document.getElementById('sessionsList');
+    if (state.sessions.length === 0) {
+        el.innerHTML = '<div style="text-align: center; color: #a0aec0; padding: 20px;">No sessions recorded yet</div>';
+        return;
+    }
+    
+    el.innerHTML = state.sessions.slice(0, 20).map(s => {
+        const totalPitches = s.pitches.length;
+        const velos = s.pitches.filter(p => p.velo).map(p => p.velo);
+        const avgVelo = velos.length ? Math.round(velos.reduce((a,b) => a+b, 0) / velos.length) : '--';
+        const cmds = s.pitches.filter(p => p.command).map(p => p.command);
+        const avgCmd = cmds.length ? (cmds.reduce((a,b) => a+b, 0) / cmds.length).toFixed(1) : '--';
+        
+        return `
+            <div class="session-card">
+                <h4>${s.pitcher}</h4>
+                <div class="meta">${new Date(s.date).toLocaleDateString()}</div>
+                <div class="stats">
+                    <div class="stat"><strong>${totalPitches}</strong> pitches</div>
+                    <div class="stat">Avg velo: <strong>${avgVelo}</strong></div>
+                    <div class="stat">Cmd: <strong>${avgCmd}</strong></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Pitcher report
+document.getElementById('reportPitcher').addEventListener('change', (e) => {
+    renderPitcherReport(e.target.value);
+});
+
+function renderPitcherReport(pitcher) {
+    const el = document.getElementById('pitcherReport');
+    if (!pitcher) {
+        el.innerHTML = '';
+        return;
+    }
+    
+    const sessions = state.sessions.filter(s => s.pitcher === pitcher);
+    if (sessions.length === 0) {
+        el.innerHTML = '<div style="color: #a0aec0;">No sessions for this pitcher</div>';
+        return;
+    }
+    
+    // Aggregate stats
+    const allPitches = sessions.flatMap(s => s.pitches);
+    const byType = {};
+    allPitches.forEach(p => {
+        if (!byType[p.type]) byType[p.type] = { count: 0, velos: [], cmds: [] };
+        byType[p.type].count++;
+        if (p.velo) byType[p.type].velos.push(p.velo);
+        if (p.command) byType[p.type].cmds.push(p.command);
+    });
+    
+    let html = `
+        <div style="margin-bottom: 12px;"><strong>${sessions.length}</strong> sessions | <strong>${allPitches.length}</strong> total pitches</div>
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+            <tr style="background: #edf2f7;">
+                <th style="padding: 8px; text-align: left;">Pitch</th>
+                <th style="padding: 8px; text-align: center;">Count</th>
+                <th style="padding: 8px; text-align: center;">Avg Velo</th>
+                <th style="padding: 8px; text-align: center;">Max Velo</th>
+                <th style="padding: 8px; text-align: center;">Cmd</th>
+            </tr>
+    `;
+    
+    for (const [type, data] of Object.entries(byType)) {
+        const avgVelo = data.velos.length ? Math.round(data.velos.reduce((a,b) => a+b, 0) / data.velos.length * 10) / 10 : '--';
+        const maxVelo = data.velos.length ? Math.max(...data.velos) : '--';
+        const avgCmd = data.cmds.length ? (data.cmds.reduce((a,b) => a+b, 0) / data.cmds.length).toFixed(1) : '--';
+        
+        html += `
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 8px;">${getPitchName(type)}</td>
+                <td style="padding: 8px; text-align: center;">${data.count}</td>
+                <td style="padding: 8px; text-align: center;">${avgVelo}</td>
+                <td style="padding: 8px; text-align: center; color: var(--accent); font-weight: bold;">${maxVelo}</td>
+                <td style="padding: 8px; text-align: center;">${avgCmd}</td>
+            </tr>
+        `;
+    }
+    
+    html += '</table>';
+    el.innerHTML = html;
+}
+
+// Modals
+function showAddPitcher() {
+    document.getElementById('addPitcherModal').classList.add('visible');
+}
+
+function showSettings() {
+    document.getElementById('coachEmails').value = state.settings.coachEmails.join('\n');
+    document.getElementById('teamName').value = state.settings.teamName;
+    document.getElementById('settingsModal').classList.add('visible');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('visible');
+}
+
+function savePitcher() {
+    const name = document.getElementById('newPitcherName').value.trim();
+    const number = document.getElementById('newPitcherNumber').value.trim();
+    const throws = document.getElementById('newPitcherThrows').value;
+    
+    if (!name) {
+        alert('Please enter a name');
+        return;
+    }
+    
+    state.pitchers.push({ name, number: number || '?', throws });
+    saveData();
+    updatePitcherDropdowns();
+    closeModal('addPitcherModal');
+    
+    document.getElementById('newPitcherName').value = '';
+    document.getElementById('newPitcherNumber').value = '';
+}
+
+function saveSettings() {
+    state.settings.coachEmails = document.getElementById('coachEmails').value
+        .split('\n')
+        .map(e => e.trim())
+        .filter(e => e);
+    state.settings.teamName = document.getElementById('teamName').value.trim();
+    saveData();
+    closeModal('settingsModal');
+    alert('Settings saved!');
+}
+
+// Email report
+function emailReport() {
+    const pitcher = document.getElementById('reportPitcher').value;
+    if (!pitcher) {
+        alert('Please select a pitcher first');
+        return;
+    }
+    
+    if (state.settings.coachEmails.length === 0) {
+        alert('Please add coach emails in Settings first');
+        showSettings();
+        return;
+    }
+    
+    const sessions = state.sessions.filter(s => s.pitcher === pitcher);
+    const allPitches = sessions.flatMap(s => s.pitches);
+    
+    const byType = {};
+    allPitches.forEach(p => {
+        if (!byType[p.type]) byType[p.type] = { count: 0, velos: [], cmds: [] };
+        byType[p.type].count++;
+        if (p.velo) byType[p.type].velos.push(p.velo);
+        if (p.command) byType[p.type].cmds.push(p.command);
+    });
+    
+    let body = `BULLPEN REPORT: ${pitcher}\n`;
+    body += `${state.settings.teamName}\n`;
+    body += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+    body += `Sessions: ${sessions.length} | Total Pitches: ${allPitches.length}\n\n`;
+    body += `PITCH BREAKDOWN:\n`;
+    body += `${'='.repeat(50)}\n`;
+    
+    for (const [type, data] of Object.entries(byType)) {
+        const avgVelo = data.velos.length ? Math.round(data.velos.reduce((a,b) => a+b, 0) / data.velos.length * 10) / 10 : '--';
+        const maxVelo = data.velos.length ? Math.max(...data.velos) : '--';
+        const avgCmd = data.cmds.length ? (data.cmds.reduce((a,b) => a+b, 0) / data.cmds.length).toFixed(1) : '--';
+        body += `${getPitchName(type)}: ${data.count} pitches | Avg: ${avgVelo} | Max: ${maxVelo} | Cmd: ${avgCmd}\n`;
+    }
+    
+    const subject = `Bullpen Report: ${pitcher} - ${new Date().toLocaleDateString()}`;
+    const mailto = `mailto:${state.settings.coachEmails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+}
+
+function emailSessionReport(session) {
+    if (state.settings.coachEmails.length === 0) return;
+    
+    let body = `BULLPEN SESSION COMPLETE\n`;
+    body += `${state.settings.teamName}\n\n`;
+    body += `Pitcher: ${session.pitcher}\n`;
+    body += `Date: ${new Date(session.date).toLocaleDateString()}\n`;
+    body += `Total Pitches: ${session.pitches.length}\n\n`;
+    body += `BREAKDOWN:\n`;
+    
+    for (const [type, data] of Object.entries(session.summary)) {
+        body += `${getPitchName(type)}: ${data.count} | Avg: ${data.avgVelo || '--'} | Max: ${data.maxVelo || '--'} | Cmd: ${data.avgCmd || '--'}\n`;
+    }
+    
+    const subject = `Bullpen Complete: ${session.pitcher} - ${session.pitches.length} pitches`;
+    const mailto = `mailto:${state.settings.coachEmails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+}
+
+// Initialize
+loadData();
+</script>
+</body>
+</html>

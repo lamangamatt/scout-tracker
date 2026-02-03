@@ -544,6 +544,15 @@
             <button class="quick-btn" id="exportBtn">📊 Export</button>
         </div>
     </div>
+    
+    <!-- End Game & Settings -->
+    <div class="section">
+        <div class="quick-actions">
+            <button class="quick-btn" id="settingsBtn" style="background: #718096;">⚙️ Settings</button>
+            <button class="quick-btn" id="bullpenBtn" style="background: #805ad5;">🔥 Bullpen</button>
+            <button class="quick-btn" id="endGameBtn" style="background: #e53e3e; color: white;">🏁 End Game</button>
+        </div>
+    </div>
 </div>
 
 <!-- Roster Modal -->
@@ -566,6 +575,44 @@
         
         <div class="section-title" style="margin-top: 16px;">Saved Teams</div>
         <div id="savedTeamsList"></div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settingsModal">
+    <div class="modal-content">
+        <h3>⚙️ Settings</h3>
+        
+        <div class="section-title">Coach Emails</div>
+        <p style="font-size: 12px; color: #718096; margin-bottom: 8px;">Enter email addresses for game summary reports (one per line)</p>
+        <textarea id="coachEmails" placeholder="headcoach@school.edu
+assistant@school.edu
+pitchingcoach@school.edu" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; min-height: 100px; font-size: 14px;"></textarea>
+        
+        <div class="section-title" style="margin-top: 16px;">Your Team Name</div>
+        <input type="text" id="yourTeamName" placeholder="Bingham Miners" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+        
+        <div class="modal-buttons">
+            <button class="cancel" onclick="closeSettingsModal()">Cancel</button>
+            <button class="save" onclick="saveSettings()">Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<!-- End Game Modal -->
+<div class="modal" id="endGameModal">
+    <div class="modal-content">
+        <h3>🏁 End Game</h3>
+        
+        <div id="gameSummary" style="background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;"></div>
+        
+        <div class="section-title">Actions</div>
+        <div class="modal-buttons" style="flex-direction: column; gap: 10px;">
+            <button onclick="emailGameSummary()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #3182ce; color: white;">📧 Email Summary to Coaches</button>
+            <button onclick="downloadGameData()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #38a169; color: white;">💾 Download CSV</button>
+            <button onclick="startNewGame()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #e53e3e; color: white;">🆕 Start New Game</button>
+            <button class="cancel" onclick="closeEndGameModal()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #e2e8f0;">Cancel</button>
+        </div>
     </div>
 </div>
 
@@ -1087,8 +1134,234 @@ function parseVoiceCommand(text) {
         : 'Try: "fastball inside called"';
 }
 
+// Settings Management
+let settings = {
+    coachEmails: [],
+    yourTeamName: ''
+};
+
+function loadSettings() {
+    const saved = localStorage.getItem('scoutTrackerSettings');
+    if (saved) {
+        settings = JSON.parse(saved);
+    }
+}
+
+function saveSettings() {
+    settings.coachEmails = document.getElementById('coachEmails').value
+        .split('\n')
+        .map(e => e.trim())
+        .filter(e => e && e.includes('@'));
+    settings.yourTeamName = document.getElementById('yourTeamName').value.trim();
+    localStorage.setItem('scoutTrackerSettings', JSON.stringify(settings));
+    closeSettingsModal();
+    alert('Settings saved! ' + settings.coachEmails.length + ' coach email(s) configured.');
+}
+
+function showSettingsModal() {
+    document.getElementById('coachEmails').value = settings.coachEmails.join('\n');
+    document.getElementById('yourTeamName').value = settings.yourTeamName;
+    document.getElementById('settingsModal').classList.add('visible');
+}
+
+function closeSettingsModal() {
+    document.getElementById('settingsModal').classList.remove('visible');
+}
+
+// End Game Functionality
+function showEndGameModal() {
+    const summary = generateGameSummary();
+    document.getElementById('gameSummary').innerHTML = summary;
+    document.getElementById('endGameModal').classList.add('visible');
+}
+
+function closeEndGameModal() {
+    document.getElementById('endGameModal').classList.remove('visible');
+}
+
+function generateGameSummary() {
+    const pitches = state.pitches;
+    if (pitches.length === 0) {
+        return '<p>No pitches recorded yet.</p>';
+    }
+    
+    // Group by pitcher
+    const byPitcher = {};
+    pitches.forEach(p => {
+        if (!byPitcher[p.pitcher]) {
+            byPitcher[p.pitcher] = { pitches: [], strikeouts: 0, walks: 0, hits: 0 };
+        }
+        byPitcher[p.pitcher].pitches.push(p);
+        if (p.result === 'strikeout_looking' || p.result === 'strikeout_swinging') {
+            byPitcher[p.pitcher].strikeouts++;
+        }
+        if (p.result === 'walk') byPitcher[p.pitcher].walks++;
+        if (p.result === 'single' || p.result === 'extra_base_hit') byPitcher[p.pitcher].hits++;
+    });
+    
+    // Pitch type breakdown
+    const byType = {};
+    pitches.forEach(p => {
+        if (!byType[p.pitchType]) byType[p.pitchType] = { total: 0, strikes: 0 };
+        byType[p.pitchType].total++;
+        if (['called_strike', 'swinging_strike', 'foul', 'strikeout_looking', 'strikeout_swinging', 'out', 'single', 'extra_base_hit'].includes(p.result)) {
+            byType[p.pitchType].strikes++;
+        }
+    });
+    
+    let html = `<strong>Game Summary</strong><br>`;
+    html += `Innings: ${state.inning} | Total Pitches: ${pitches.length}<br><br>`;
+    
+    html += `<strong>By Pitcher:</strong><br>`;
+    for (const [pitcher, data] of Object.entries(byPitcher)) {
+        html += `${pitcher}: ${data.pitches.length} pitches, ${data.strikeouts} K, ${data.walks} BB, ${data.hits} H<br>`;
+    }
+    
+    html += `<br><strong>Pitch Breakdown:</strong><br>`;
+    for (const [type, data] of Object.entries(byType)) {
+        const strikePct = Math.round((data.strikes / data.total) * 100);
+        html += `${type}: ${data.total} (${strikePct}% strikes)<br>`;
+    }
+    
+    return html;
+}
+
+function generateTextSummary() {
+    const pitches = state.pitches;
+    const battingTeam = document.getElementById('battingTeam').value || 'Opponent';
+    const pitchingTeam = settings.yourTeamName || document.getElementById('pitchingTeam').value || 'Our Team';
+    
+    let text = `GAME SCOUTING REPORT\n`;
+    text += `${pitchingTeam} vs ${battingTeam}\n`;
+    text += `Date: ${new Date().toLocaleDateString()}\n`;
+    text += `${'='.repeat(40)}\n\n`;
+    
+    text += `OVERVIEW\n`;
+    text += `Innings Tracked: ${state.inning}\n`;
+    text += `Total Pitches: ${pitches.length}\n\n`;
+    
+    // Group by pitcher
+    const byPitcher = {};
+    pitches.forEach(p => {
+        if (!byPitcher[p.pitcher]) {
+            byPitcher[p.pitcher] = { pitches: [], strikeouts: 0, walks: 0, hits: 0, balls: 0, strikes: 0 };
+        }
+        byPitcher[p.pitcher].pitches.push(p);
+        if (p.result === 'strikeout_looking' || p.result === 'strikeout_swinging') byPitcher[p.pitcher].strikeouts++;
+        if (p.result === 'walk') byPitcher[p.pitcher].walks++;
+        if (p.result === 'single' || p.result === 'extra_base_hit') byPitcher[p.pitcher].hits++;
+        if (p.result === 'ball' || p.result === 'walk') byPitcher[p.pitcher].balls++;
+        else byPitcher[p.pitcher].strikes++;
+    });
+    
+    text += `PITCHER BREAKDOWN\n`;
+    text += `${'-'.repeat(40)}\n`;
+    for (const [pitcher, data] of Object.entries(byPitcher)) {
+        const strikePct = Math.round((data.strikes / data.pitches.length) * 100);
+        text += `${pitcher}\n`;
+        text += `  Pitches: ${data.pitches.length} | Strike%: ${strikePct}%\n`;
+        text += `  K: ${data.strikeouts} | BB: ${data.walks} | H: ${data.hits}\n\n`;
+    }
+    
+    // Pitch type breakdown
+    const byType = {};
+    pitches.forEach(p => {
+        if (!byType[p.pitchType]) byType[p.pitchType] = { total: 0, strikes: 0, zones: {} };
+        byType[p.pitchType].total++;
+        if (!['ball', 'walk'].includes(p.result)) byType[p.pitchType].strikes++;
+        if (!byType[p.pitchType].zones[p.zone]) byType[p.pitchType].zones[p.zone] = 0;
+        byType[p.pitchType].zones[p.zone]++;
+    });
+    
+    text += `PITCH TYPE ANALYSIS\n`;
+    text += `${'-'.repeat(40)}\n`;
+    for (const [type, data] of Object.entries(byType)) {
+        const strikePct = Math.round((data.strikes / data.total) * 100);
+        const topZone = Object.entries(data.zones).sort((a,b) => b[1] - a[1])[0];
+        text += `${type}: ${data.total} pitches (${strikePct}% strikes)\n`;
+        text += `  Most common zone: ${topZone ? topZone[0] : 'N/A'}\n`;
+    }
+    
+    text += `\n${'='.repeat(40)}\n`;
+    text += `Generated by Scout Tracker\n`;
+    
+    return text;
+}
+
+function emailGameSummary() {
+    if (settings.coachEmails.length === 0) {
+        alert('No coach emails configured. Please add emails in Settings.');
+        showSettingsModal();
+        return;
+    }
+    
+    const battingTeam = document.getElementById('battingTeam').value || 'Opponent';
+    const subject = `Game Scouting Report: vs ${battingTeam} - ${new Date().toLocaleDateString()}`;
+    const body = generateTextSummary();
+    
+    const mailto = `mailto:${settings.coachEmails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+}
+
+function downloadGameData() {
+    const csv = generateCSV();
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scout_data_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+}
+
+function startNewGame() {
+    if (confirm('Are you sure you want to start a new game? Current data will be saved to history.')) {
+        // Save current game to history
+        const gameHistory = JSON.parse(localStorage.getItem('scoutTrackerHistory') || '[]');
+        if (state.pitches.length > 0) {
+            gameHistory.unshift({
+                id: state.gameId,
+                date: new Date().toISOString(),
+                pitches: state.pitches,
+                inning: state.inning
+            });
+            localStorage.setItem('scoutTrackerHistory', JSON.stringify(gameHistory.slice(0, 50))); // Keep last 50 games
+        }
+        
+        // Reset state
+        state = {
+            gameId: 'game_' + Date.now(),
+            inning: 1,
+            halfInning: 'top',
+            outs: 0,
+            balls: 0,
+            strikes: 0,
+            totalPitches: 0,
+            battingTeam: '',
+            pitchingTeam: '',
+            currentBatter: '',
+            currentPitcher: '',
+            currentPitch: { type: null, zone: null },
+            inplayData: { hitType: null, fielder: null },
+            pitches: [],
+            teams: state.teams // Keep teams
+        };
+        
+        updateDisplay();
+        closeEndGameModal();
+        alert('New game started!');
+    }
+}
+
+// Button Event Listeners
+document.getElementById('settingsBtn').addEventListener('click', showSettingsModal);
+document.getElementById('endGameBtn').addEventListener('click', showEndGameModal);
+document.getElementById('bullpenBtn').addEventListener('click', () => {
+    window.location.href = 'bullpen.html';
+});
+
 // Initialize
 loadTeams();
+loadSettings();
 updateDisplay();
 document.getElementById('syncStatus').textContent = useLocalStorage ? 'Local Mode' : 'Connecting...';
 document.getElementById('syncStatus').className = 'sync-status connected';

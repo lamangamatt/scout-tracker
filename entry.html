@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Tracker - Data Entry</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+            --ball: #3182ce;
+            --strike: #e53e3e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 1.1em; }
+        
+        .sync-status {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .sync-status.connected { background: var(--success); }
+        .sync-status.disconnected { background: var(--accent); }
+        
+        .container {
+            padding: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        
+        .section-title {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        /* Team/Player Selection */
+        .team-select {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .team-select select {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .team-select select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .player-select {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .player-select select {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        /* Count Display */
+        .count-display {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 12px;
+            background: var(--dark);
+            border-radius: 8px;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .count-item { text-align: center; }
+        .count-item .label { font-size: 0.7em; opacity: 0.7; }
+        .count-item .value { font-size: 1.8em; font-weight: 700; }
+        .count-item.balls .value { color: var(--ball); }
+        .count-item.strikes .value { color: var(--strike); }
+        .count-item.outs .value { color: var(--warning); }
+        
+        /* Pitch Types */
+        .pitch-types {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .pitch-btn {
+            padding: 14px 6px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            background: white;
+            color: var(--dark);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .pitch-btn:active { transform: scale(0.95); }
+        .pitch-btn.selected { background: var(--primary); color: white; }
+        .pitch-btn .abbrev { display: block; font-size: 1.2em; margin-bottom: 2px; }
+        
+        /* Location Grid */
+        .location-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 3px;
+            background: #2d3748;
+            padding: 6px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .zone-btn {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.65em;
+            font-weight: 500;
+            cursor: pointer;
+            background: #4a5568;
+            color: #a0aec0;
+        }
+        
+        .zone-btn.strike-zone { background: #718096; color: white; }
+        .zone-btn:active { transform: scale(0.9); }
+        .zone-btn.selected { background: var(--accent); color: white; }
+        
+        /* Result Buttons - 5 columns now */
+        .result-btns {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .result-btn {
+            padding: 16px 4px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.75em;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+        }
+        
+        .result-btn:active { transform: scale(0.95); }
+        .result-btn.ball { background: var(--ball); }
+        .result-btn.called { background: #9f7aea; }
+        .result-btn.swinging { background: var(--accent); }
+        .result-btn.foul { background: var(--warning); }
+        .result-btn.inplay { background: var(--success); }
+        
+        /* In Play Panel */
+        .inplay-panel {
+            background: #edf2f7;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        
+        .inplay-panel.visible { display: block; }
+        
+        .inplay-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .inplay-btn {
+            padding: 12px 6px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.75em;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .inplay-btn.selected { border-color: var(--primary); background: #ebf4ff; }
+        
+        .fielder-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .fielder-btn {
+            padding: 10px 4px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.7em;
+            cursor: pointer;
+        }
+        
+        .fielder-btn.selected { border-color: var(--primary); background: #ebf4ff; }
+        
+        .outcome-btns {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        
+        .outcome-btn {
+            padding: 14px 6px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+        }
+        
+        .outcome-btn.out { background: #718096; }
+        .outcome-btn.single { background: var(--success); }
+        .outcome-btn.xbh { background: #38b2ac; }
+        .outcome-btn.error { background: var(--warning); }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        
+        .quick-btn {
+            padding: 10px 6px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.75em;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .quick-btn:active { background: #e2e8f0; }
+        
+        /* Roster Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.visible { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal h3 { margin-bottom: 12px; color: var(--primary); }
+        
+        .modal input, .modal textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .modal textarea { height: 150px; font-family: monospace; }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .modal-buttons .save { background: var(--primary); color: white; }
+        .modal-buttons .cancel { background: #e2e8f0; color: var(--dark); }
+        
+        /* Voice Button */
+        .voice-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), #2c5282);
+            color: white;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .voice-btn.listening {
+            background: linear-gradient(135deg, var(--accent), #c53030);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
+        }
+        
+        .voice-transcript {
+            padding: 8px;
+            background: #edf2f7;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #4a5568;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <h1>⚾ Scout Tracker</h1>
+    <div>
+        <span class="sync-status" id="syncStatus">Connecting...</span>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Game Setup -->
+    <div class="section">
+        <div class="section-title">Game Setup</div>
+        <div class="team-select">
+            <select id="battingTeam">
+                <option value="">Batting Team...</option>
+            </select>
+            <select id="pitchingTeam">
+                <option value="">Pitching Team...</option>
+            </select>
+            <button class="quick-btn" onclick="showRosterModal()">⚙️</button>
+        </div>
+        <div class="player-select">
+            <select id="currentBatter">
+                <option value="">Select Batter...</option>
+            </select>
+            <select id="currentPitcher">
+                <option value="">Select Pitcher...</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Count -->
+    <div class="count-display">
+        <div class="count-item balls">
+            <div class="label">Balls</div>
+            <div class="value" id="ballCount">0</div>
+        </div>
+        <div class="count-item strikes">
+            <div class="label">Strikes</div>
+            <div class="value" id="strikeCount">0</div>
+        </div>
+        <div class="count-item outs">
+            <div class="label">Outs</div>
+            <div class="value" id="outCount">0</div>
+        </div>
+        <div class="count-item">
+            <div class="label">Inning</div>
+            <div class="value" id="inningNum">1</div>
+        </div>
+        <div class="count-item">
+            <div class="label">Pitches</div>
+            <div class="value" id="pitchNum">0</div>
+        </div>
+    </div>
+
+    <!-- Voice Input -->
+    <div class="section">
+        <button class="voice-btn" id="voiceBtn">
+            <span>🎤</span>
+            <span id="voiceBtnText">Tap to Speak</span>
+        </button>
+        <div class="voice-transcript" id="transcript">Say: "fastball inside called" or "curve low swinging"</div>
+    </div>
+
+    <!-- Pitch Type -->
+    <div class="section">
+        <div class="section-title">Pitch Type</div>
+        <div class="pitch-types" id="pitchTypes">
+            <button class="pitch-btn" data-pitch="FB"><span class="abbrev">FB</span>Fast</button>
+            <button class="pitch-btn" data-pitch="CB"><span class="abbrev">CB</span>Curve</button>
+            <button class="pitch-btn" data-pitch="SL"><span class="abbrev">SL</span>Slider</button>
+            <button class="pitch-btn" data-pitch="CH"><span class="abbrev">CH</span>Change</button>
+            <button class="pitch-btn" data-pitch="CT"><span class="abbrev">CT</span>Cutter</button>
+            <button class="pitch-btn" data-pitch="SI"><span class="abbrev">SI</span>Sinker</button>
+            <button class="pitch-btn" data-pitch="SP"><span class="abbrev">SP</span>Splitter</button>
+            <button class="pitch-btn" data-pitch="KN"><span class="abbrev">KN</span>Knuckle</button>
+        </div>
+    </div>
+
+    <!-- Location -->
+    <div class="section">
+        <div class="section-title">Location (Catcher's View)</div>
+        <div class="location-grid" id="locationGrid">
+            <button class="zone-btn" data-zone="HO">H/O</button>
+            <button class="zone-btn strike-zone" data-zone="1">1</button>
+            <button class="zone-btn strike-zone" data-zone="2">2</button>
+            <button class="zone-btn strike-zone" data-zone="3">3</button>
+            <button class="zone-btn" data-zone="HI">H/I</button>
+            <button class="zone-btn" data-zone="MO">M/O</button>
+            <button class="zone-btn strike-zone" data-zone="4">4</button>
+            <button class="zone-btn strike-zone" data-zone="5">5</button>
+            <button class="zone-btn strike-zone" data-zone="6">6</button>
+            <button class="zone-btn" data-zone="MI">M/I</button>
+            <button class="zone-btn" data-zone="LO">L/O</button>
+            <button class="zone-btn strike-zone" data-zone="7">7</button>
+            <button class="zone-btn strike-zone" data-zone="8">8</button>
+            <button class="zone-btn strike-zone" data-zone="9">9</button>
+            <button class="zone-btn" data-zone="LI">L/I</button>
+        </div>
+    </div>
+
+    <!-- Result -->
+    <div class="section">
+        <div class="section-title">Result</div>
+        <div class="result-btns">
+            <button class="result-btn ball" data-result="ball">Ball</button>
+            <button class="result-btn called" data-result="called">Called</button>
+            <button class="result-btn swinging" data-result="swinging">Swing ❌</button>
+            <button class="result-btn foul" data-result="foul">Foul</button>
+            <button class="result-btn inplay" data-result="inplay">In Play</button>
+        </div>
+    </div>
+
+    <!-- In Play Panel -->
+    <div class="inplay-panel" id="inplayPanel">
+        <div class="section-title">Ball In Play</div>
+        <div class="inplay-row" id="hitType">
+            <button class="inplay-btn" data-hit="GB">Ground Ball</button>
+            <button class="inplay-btn" data-hit="FB">Fly Ball</button>
+            <button class="inplay-btn" data-hit="LD">Line Drive</button>
+            <button class="inplay-btn" data-hit="PU">Pop Up</button>
+        </div>
+        
+        <div class="section-title">Fielder</div>
+        <div class="fielder-grid" id="fielderGrid">
+            <button class="fielder-btn" data-pos="1">P</button>
+            <button class="fielder-btn" data-pos="2">C</button>
+            <button class="fielder-btn" data-pos="3">1B</button>
+            <button class="fielder-btn" data-pos="4">2B</button>
+            <button class="fielder-btn" data-pos="5">3B</button>
+            <button class="fielder-btn" data-pos="6">SS</button>
+            <button class="fielder-btn" data-pos="7">LF</button>
+            <button class="fielder-btn" data-pos="8">CF</button>
+            <button class="fielder-btn" data-pos="9">RF</button>
+            <button class="fielder-btn" data-pos="0">?</button>
+        </div>
+        
+        <div class="section-title">Outcome</div>
+        <div class="outcome-btns">
+            <button class="outcome-btn out" data-outcome="out">OUT</button>
+            <button class="outcome-btn single" data-outcome="single">1B</button>
+            <button class="outcome-btn xbh" data-outcome="xbh">2B+</button>
+            <button class="outcome-btn error" data-outcome="error">ERR</button>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+        <div class="quick-actions">
+            <button class="quick-btn" id="undoBtn">↩️ Undo</button>
+            <button class="quick-btn" id="nextBatterBtn">Next AB</button>
+            <button class="quick-btn" id="newInningBtn">New Inn</button>
+            <button class="quick-btn" id="exportBtn">📊 Export</button>
+        </div>
+    </div>
+</div>
+
+<!-- Roster Modal -->
+<div class="modal" id="rosterModal">
+    <div class="modal-content">
+        <h3>⚙️ Manage Teams</h3>
+        
+        <div class="section-title">Add/Edit Team</div>
+        <input type="text" id="teamName" placeholder="Team Name (e.g., Bingham)">
+        <textarea id="rosterText" placeholder="Enter roster, one player per line:
+1 John Smith
+2 Mike Johnson
+24 Chris Davis
+..."></textarea>
+        
+        <div class="modal-buttons">
+            <button class="cancel" onclick="closeRosterModal()">Cancel</button>
+            <button class="save" onclick="saveTeam()">Save Team</button>
+        </div>
+        
+        <div class="section-title" style="margin-top: 16px;">Saved Teams</div>
+        <div id="savedTeamsList"></div>
+    </div>
+</div>
+
+<script>
+// Firebase Configuration - Using a demo project (you should create your own)
+const firebaseConfig = {
+    apiKey: "AIzaSyDemo-Key-Replace-With-Your-Own",
+    authDomain: "scout-tracker-demo.firebaseapp.com",
+    databaseURL: "https://scout-tracker-demo-default-rtdb.firebaseio.com",
+    projectId: "scout-tracker-demo"
+};
+
+// For demo purposes, we'll use localStorage if Firebase fails
+let db = null;
+let useLocalStorage = true;
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    useLocalStorage = false;
+} catch (e) {
+    console.log('Firebase not configured, using localStorage');
+}
+
+// Game State
+let state = {
+    gameId: 'game_' + Date.now(),
+    inning: 1,
+    halfInning: 'top', // top or bottom
+    outs: 0,
+    balls: 0,
+    strikes: 0,
+    totalPitches: 0,
+    battingTeam: '',
+    pitchingTeam: '',
+    currentBatter: '',
+    currentPitcher: '',
+    currentPitch: { type: null, zone: null },
+    inplayData: { hitType: null, fielder: null },
+    pitches: [],
+    teams: {}
+};
+
+// Load teams from localStorage
+function loadTeams() {
+    const saved = localStorage.getItem('scoutTrackerTeams');
+    if (saved) {
+        state.teams = JSON.parse(saved);
+        updateTeamDropdowns();
+    }
+    
+    // Add Bingham default if no teams
+    if (Object.keys(state.teams).length === 0) {
+        state.teams['Bingham'] = [
+            { number: '2', name: 'Dylan Frank' },
+            { number: '3', name: 'Kam Beck' },
+            { number: '5', name: 'Bauer Williams' },
+            { number: '21', name: 'Mason Marti' },
+            { number: '37', name: 'Zach Sorenson' },
+            { number: '41', name: 'Porter Larsen' },
+            { number: '44', name: 'Bauer Jacobs' },
+            { number: '47', name: 'Jared Orullian' }
+        ];
+        saveTeams();
+        updateTeamDropdowns();
+    }
+}
+
+function saveTeams() {
+    localStorage.setItem('scoutTrackerTeams', JSON.stringify(state.teams));
+}
+
+function updateTeamDropdowns() {
+    const battingSelect = document.getElementById('battingTeam');
+    const pitchingSelect = document.getElementById('pitchingTeam');
+    
+    const options = '<option value="">Select Team...</option>' + 
+        Object.keys(state.teams).map(t => `<option value="${t}">${t}</option>`).join('');
+    
+    battingSelect.innerHTML = options;
+    pitchingSelect.innerHTML = options;
+}
+
+function updatePlayerDropdowns() {
+    const batterSelect = document.getElementById('currentBatter');
+    const pitcherSelect = document.getElementById('currentPitcher');
+    
+    const battingTeam = document.getElementById('battingTeam').value;
+    const pitchingTeam = document.getElementById('pitchingTeam').value;
+    
+    if (battingTeam && state.teams[battingTeam]) {
+        batterSelect.innerHTML = '<option value="">Select Batter...</option>' +
+            state.teams[battingTeam].map(p => 
+                `<option value="${p.number} ${p.name}">#${p.number} ${p.name}</option>`
+            ).join('');
+    } else {
+        batterSelect.innerHTML = '<option value="">Select Batter...</option>';
+    }
+    
+    if (pitchingTeam && state.teams[pitchingTeam]) {
+        pitcherSelect.innerHTML = '<option value="">Select Pitcher...</option>' +
+            state.teams[pitchingTeam].map(p => 
+                `<option value="${p.number} ${p.name}">#${p.number} ${p.name}</option>`
+            ).join('');
+    } else {
+        pitcherSelect.innerHTML = '<option value="">Select Pitcher...</option>';
+    }
+}
+
+// Roster Modal
+function showRosterModal() {
+    document.getElementById('rosterModal').classList.add('visible');
+    renderSavedTeams();
+}
+
+function closeRosterModal() {
+    document.getElementById('rosterModal').classList.remove('visible');
+    document.getElementById('teamName').value = '';
+    document.getElementById('rosterText').value = '';
+}
+
+function saveTeam() {
+    const name = document.getElementById('teamName').value.trim();
+    const rosterText = document.getElementById('rosterText').value.trim();
+    
+    if (!name) {
+        alert('Please enter a team name');
+        return;
+    }
+    
+    const players = rosterText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line)
+        .map(line => {
+            const match = line.match(/^(\d+)\s+(.+)$/);
+            if (match) {
+                return { number: match[1], name: match[2] };
+            }
+            return { number: '?', name: line };
+        });
+    
+    state.teams[name] = players;
+    saveTeams();
+    updateTeamDropdowns();
+    renderSavedTeams();
+    
+    document.getElementById('teamName').value = '';
+    document.getElementById('rosterText').value = '';
+    
+    alert(`Saved ${name} with ${players.length} players`);
+}
+
+function renderSavedTeams() {
+    const container = document.getElementById('savedTeamsList');
+    container.innerHTML = Object.entries(state.teams).map(([name, players]) => `
+        <div style="padding: 8px; background: #f7fafc; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span><strong>${name}</strong> (${players.length} players)</span>
+            <button onclick="editTeam('${name}')" style="padding: 4px 8px; border: none; background: #e2e8f0; border-radius: 4px; cursor: pointer;">Edit</button>
+        </div>
+    `).join('');
+}
+
+function editTeam(name) {
+    document.getElementById('teamName').value = name;
+    document.getElementById('rosterText').value = state.teams[name]
+        .map(p => `${p.number} ${p.name}`).join('\n');
+}
+
+// Event Listeners for team selection
+document.getElementById('battingTeam').addEventListener('change', updatePlayerDropdowns);
+document.getElementById('pitchingTeam').addEventListener('change', updatePlayerDropdowns);
+
+// Pitch Type Selection
+document.querySelectorAll('.pitch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.pitch-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.currentPitch.type = btn.dataset.pitch;
+    });
+});
+
+// Zone Selection
+document.querySelectorAll('.zone-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.currentPitch.zone = btn.dataset.zone;
+    });
+});
+
+// Result Buttons
+document.querySelectorAll('.result-btn').forEach(btn => {
+    btn.addEventListener('click', () => recordResult(btn.dataset.result));
+});
+
+function recordResult(result) {
+    const batter = document.getElementById('currentBatter').value || 'Unknown';
+    const pitcher = document.getElementById('currentPitcher').value || 'Unknown';
+    
+    if (result === 'ball') {
+        state.balls++;
+        if (state.balls >= 4) {
+            logPitch('walk', batter, pitcher);
+            resetCount();
+        } else {
+            logPitch('ball', batter, pitcher);
+        }
+    } else if (result === 'called') {
+        state.strikes++;
+        if (state.strikes >= 3) {
+            logPitch('strikeout_looking', batter, pitcher);
+            state.outs++;
+            resetCount();
+            checkInningEnd();
+        } else {
+            logPitch('called_strike', batter, pitcher);
+        }
+    } else if (result === 'swinging') {
+        state.strikes++;
+        if (state.strikes >= 3) {
+            logPitch('strikeout_swinging', batter, pitcher);
+            state.outs++;
+            resetCount();
+            checkInningEnd();
+        } else {
+            logPitch('swinging_strike', batter, pitcher);
+        }
+    } else if (result === 'foul') {
+        if (state.strikes < 2) state.strikes++;
+        logPitch('foul', batter, pitcher);
+    } else if (result === 'inplay') {
+        document.getElementById('inplayPanel').classList.add('visible');
+        return;
+    }
+    
+    state.totalPitches++;
+    updateDisplay();
+    clearPitchSelection();
+    syncToFirebase();
+}
+
+// In-Play Handlers
+document.querySelectorAll('.inplay-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.inplay-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.inplayData.hitType = btn.dataset.hit;
+    });
+});
+
+document.querySelectorAll('.fielder-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.fielder-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.inplayData.fielder = btn.dataset.pos;
+    });
+});
+
+document.querySelectorAll('.outcome-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const batter = document.getElementById('currentBatter').value || 'Unknown';
+        const pitcher = document.getElementById('currentPitcher').value || 'Unknown';
+        const outcome = btn.dataset.outcome;
+        
+        if (outcome === 'out') {
+            state.outs++;
+            logPitch('out', batter, pitcher, state.inplayData);
+            checkInningEnd();
+        } else if (outcome === 'single') {
+            logPitch('single', batter, pitcher, state.inplayData);
+        } else if (outcome === 'xbh') {
+            logPitch('extra_base_hit', batter, pitcher, state.inplayData);
+        } else if (outcome === 'error') {
+            logPitch('error', batter, pitcher, state.inplayData);
+        }
+        
+        state.totalPitches++;
+        resetCount();
+        hideInplayPanel();
+        updateDisplay();
+        clearPitchSelection();
+        syncToFirebase();
+    });
+});
+
+function hideInplayPanel() {
+    document.getElementById('inplayPanel').classList.remove('visible');
+    document.querySelectorAll('.inplay-btn, .fielder-btn').forEach(b => b.classList.remove('selected'));
+    state.inplayData = { hitType: null, fielder: null };
+}
+
+function logPitch(result, batter, pitcher, extra = {}) {
+    const pitch = {
+        timestamp: Date.now(),
+        inning: state.inning,
+        halfInning: state.halfInning,
+        outs: state.outs,
+        count: `${state.balls}-${state.strikes}`,
+        batter: batter,
+        pitcher: pitcher,
+        pitchType: state.currentPitch.type || '?',
+        zone: state.currentPitch.zone || '?',
+        result: result,
+        ...extra
+    };
+    
+    state.pitches.push(pitch);
+    console.log('Logged pitch:', pitch);
+}
+
+function resetCount() {
+    state.balls = 0;
+    state.strikes = 0;
+}
+
+function checkInningEnd() {
+    if (state.outs >= 3) {
+        state.outs = 0;
+        if (state.halfInning === 'top') {
+            state.halfInning = 'bottom';
+        } else {
+            state.halfInning = 'top';
+            state.inning++;
+        }
+    }
+}
+
+function clearPitchSelection() {
+    document.querySelectorAll('.pitch-btn, .zone-btn').forEach(b => b.classList.remove('selected'));
+    state.currentPitch = { type: null, zone: null };
+}
+
+function updateDisplay() {
+    document.getElementById('ballCount').textContent = state.balls;
+    document.getElementById('strikeCount').textContent = state.strikes;
+    document.getElementById('outCount').textContent = state.outs;
+    document.getElementById('inningNum').textContent = state.inning;
+    document.getElementById('pitchNum').textContent = state.totalPitches;
+}
+
+// Quick Actions
+document.getElementById('undoBtn').addEventListener('click', () => {
+    if (state.pitches.length > 0) {
+        state.pitches.pop();
+        state.totalPitches = Math.max(0, state.totalPitches - 1);
+        updateDisplay();
+        syncToFirebase();
+    }
+});
+
+document.getElementById('nextBatterBtn').addEventListener('click', () => {
+    resetCount();
+    clearPitchSelection();
+    hideInplayPanel();
+    updateDisplay();
+});
+
+document.getElementById('newInningBtn').addEventListener('click', () => {
+    state.outs = 0;
+    if (state.halfInning === 'top') {
+        state.halfInning = 'bottom';
+    } else {
+        state.halfInning = 'top';
+        state.inning++;
+    }
+    resetCount();
+    clearPitchSelection();
+    hideInplayPanel();
+    updateDisplay();
+    syncToFirebase();
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+    const csv = generateCSV();
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scout_data_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+});
+
+function generateCSV() {
+    const headers = ['Timestamp', 'Inning', 'Half', 'Outs', 'Count', 'Batter', 'Pitcher', 'Pitch', 'Zone', 'Result', 'HitType', 'Fielder'];
+    const rows = state.pitches.map(p => [
+        new Date(p.timestamp).toLocaleTimeString(),
+        p.inning, p.halfInning, p.outs, p.count,
+        p.batter, p.pitcher, p.pitchType, p.zone, p.result,
+        p.hitType || '', p.fielder || ''
+    ]);
+    return [headers, ...rows].map(r => r.join(',')).join('\n');
+}
+
+// Firebase Sync
+function syncToFirebase() {
+    const syncStatus = document.getElementById('syncStatus');
+    
+    if (useLocalStorage) {
+        localStorage.setItem('scoutTrackerState', JSON.stringify(state));
+        syncStatus.textContent = 'Local';
+        syncStatus.className = 'sync-status connected';
+        return;
+    }
+    
+    db.ref('games/' + state.gameId).set(state)
+        .then(() => {
+            syncStatus.textContent = '✓ Synced';
+            syncStatus.className = 'sync-status connected';
+        })
+        .catch(err => {
+            syncStatus.textContent = 'Sync Error';
+            syncStatus.className = 'sync-status disconnected';
+            // Fallback to localStorage
+            localStorage.setItem('scoutTrackerState', JSON.stringify(state));
+        });
+}
+
+// Voice Recognition
+let recognition = null;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    
+    recognition.onresult = (event) => {
+        const text = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        document.getElementById('transcript').textContent = text;
+        
+        if (event.results[event.results.length - 1].isFinal) {
+            parseVoiceCommand(text);
+        }
+    };
+    
+    recognition.onend = () => {
+        document.getElementById('voiceBtn').classList.remove('listening');
+        document.getElementById('voiceBtnText').textContent = 'Tap to Speak';
+    };
+}
+
+document.getElementById('voiceBtn').addEventListener('click', () => {
+    if (!recognition) {
+        alert('Voice not supported. Use Chrome.');
+        return;
+    }
+    
+    if (document.getElementById('voiceBtn').classList.contains('listening')) {
+        recognition.stop();
+    } else {
+        recognition.start();
+        document.getElementById('voiceBtn').classList.add('listening');
+        document.getElementById('voiceBtnText').textContent = 'Listening...';
+    }
+});
+
+function parseVoiceCommand(text) {
+    // Pitch type
+    let pitchType = null;
+    if (text.includes('fast') || text.includes('heater')) pitchType = 'FB';
+    else if (text.includes('curve')) pitchType = 'CB';
+    else if (text.includes('slider') || text.includes('slide')) pitchType = 'SL';
+    else if (text.includes('change')) pitchType = 'CH';
+    else if (text.includes('cutter') || text.includes('cut')) pitchType = 'CT';
+    else if (text.includes('sink')) pitchType = 'SI';
+    
+    // Location
+    let zone = null;
+    const inside = text.includes('inside') || text.includes(' in');
+    const outside = text.includes('outside') || text.includes('away');
+    const high = text.includes('high') || text.includes(' up');
+    const low = text.includes('low') || text.includes('down');
+    const middle = text.includes('middle') || text.includes('center');
+    
+    if (middle) zone = '5';
+    else if (high && inside) zone = 'HI';
+    else if (high && outside) zone = 'HO';
+    else if (high) zone = '2';
+    else if (low && inside) zone = 'LI';
+    else if (low && outside) zone = 'LO';
+    else if (low) zone = '8';
+    else if (inside) zone = '6';
+    else if (outside) zone = '4';
+    
+    // Result
+    let result = null;
+    if (text.includes('ball') && !text.includes('ground') && !text.includes('fly')) result = 'ball';
+    else if (text.includes('called') || text.includes('looking')) result = 'called';
+    else if (text.includes('swing') || text.includes('miss') || text.includes('whiff')) result = 'swinging';
+    else if (text.includes('foul')) result = 'foul';
+    else if (text.includes('play') || text.includes('hit') || text.includes('ground') || text.includes('fly') || text.includes('line')) result = 'inplay';
+    
+    // Apply
+    if (pitchType) {
+        document.querySelectorAll('.pitch-btn').forEach(b => b.classList.remove('selected'));
+        const btn = document.querySelector(`.pitch-btn[data-pitch="${pitchType}"]`);
+        if (btn) btn.classList.add('selected');
+        state.currentPitch.type = pitchType;
+    }
+    
+    if (zone) {
+        document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('selected'));
+        const btn = document.querySelector(`.zone-btn[data-zone="${zone}"]`);
+        if (btn) btn.classList.add('selected');
+        state.currentPitch.zone = zone;
+    }
+    
+    if (result) {
+        recordResult(result);
+    }
+    
+    // Feedback
+    let parts = [];
+    if (pitchType) parts.push(pitchType);
+    if (zone) parts.push('Zone: ' + zone);
+    if (result) parts.push(result);
+    
+    document.getElementById('transcript').textContent = parts.length > 0 
+        ? '✓ ' + parts.join(' | ')
+        : 'Try: "fastball inside called"';
+}
+
+// Initialize
+loadTeams();
+updateDisplay();
+document.getElementById('syncStatus').textContent = useLocalStorage ? 'Local Mode' : 'Connecting...';
+document.getElementById('syncStatus').className = 'sync-status connected';
+</script>
+
+</body>
+</html>

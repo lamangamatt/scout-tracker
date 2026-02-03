@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Tracker - Coach View</title>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 { font-size: 1.3em; }
+        
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+        
+        .sync-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Game State Bar */
+        .game-state {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .state-item {
+            text-align: center;
+        }
+        
+        .state-item .label {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+        
+        .state-item .value {
+            font-size: 2em;
+            font-weight: 700;
+        }
+        
+        .state-item.balls .value { color: #63b3ed; }
+        .state-item.strikes .value { color: #fc8181; }
+        
+        /* Prediction Panel */
+        .prediction-panel {
+            background: linear-gradient(135deg, #2c5282, #1a365d);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .prediction-panel h2 {
+            font-size: 1em;
+            opacity: 0.8;
+            margin-bottom: 12px;
+        }
+        
+        .prediction-main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .predicted-pitch {
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 20px 30px;
+        }
+        
+        .predicted-pitch .type {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #ffd700;
+        }
+        
+        .predicted-pitch .confidence {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .predicted-location {
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+        }
+        
+        .loc-zone {
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+        }
+        
+        .loc-zone.hot {
+            background: rgba(255, 215, 0, 0.6);
+        }
+        
+        .loc-zone.warm {
+            background: rgba(255, 215, 0, 0.3);
+        }
+        
+        /* Pitch Mix */
+        .pitch-mix {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .mix-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px 16px;
+            text-align: center;
+            min-width: 70px;
+        }
+        
+        .mix-item .pct {
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+        
+        .mix-item .name {
+            font-size: 0.75em;
+            opacity: 0.7;
+        }
+        
+        /* Current At-Bat */
+        .current-ab {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .ab-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .player-name {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .player-tag {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.15);
+        }
+        
+        /* Pitch Sequence */
+        .pitch-sequence {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .seq-pitch {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        
+        .seq-pitch.ball { background: #3182ce; }
+        .seq-pitch.strike { background: #e53e3e; }
+        .seq-pitch.foul { background: #d69e2e; }
+        .seq-pitch.inplay { background: #38a169; }
+        
+        .seq-pitch .num { font-size: 1.1em; }
+        .seq-pitch .type { font-size: 0.7em; opacity: 0.8; }
+        
+        /* Insights */
+        .insights {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .insights h3 {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-bottom: 12px;
+        }
+        
+        .insight-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .insight-item {
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .insight-icon {
+            font-size: 1.5em;
+        }
+        
+        .insight-text {
+            font-size: 0.9em;
+        }
+        
+        .insight-item.warning {
+            border-left: 3px solid var(--warning);
+        }
+        
+        .insight-item.opportunity {
+            border-left: 3px solid var(--success);
+        }
+        
+        /* Recent Pitches */
+        .recent-pitches {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .recent-pitches h3 {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-bottom: 12px;
+        }
+        
+        .pitch-log {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85em;
+        }
+        
+        .log-item:last-child { border-bottom: none; }
+        
+        .log-pitch { font-weight: 600; }
+        .log-result.ball { color: #63b3ed; }
+        .log-result.strike { color: #fc8181; }
+        .log-result.hit { color: #68d391; }
+        
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            opacity: 0.6;
+        }
+        
+        .no-data .icon { font-size: 3em; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <h1>📊 Coach View</h1>
+    <div class="sync-indicator">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncText">Listening for data...</span>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Game State -->
+    <div class="game-state">
+        <div class="state-item">
+            <div class="label">Inning</div>
+            <div class="value" id="inning">1</div>
+        </div>
+        <div class="state-item balls">
+            <div class="label">Balls</div>
+            <div class="value" id="balls">0</div>
+        </div>
+        <div class="state-item strikes">
+            <div class="label">Strikes</div>
+            <div class="value" id="strikes">0</div>
+        </div>
+        <div class="state-item">
+            <div class="label">Outs</div>
+            <div class="value" id="outs">0</div>
+        </div>
+        <div class="state-item">
+            <div class="label">Pitches</div>
+            <div class="value" id="totalPitches">0</div>
+        </div>
+    </div>
+
+    <!-- Prediction Panel -->
+    <div class="prediction-panel" id="predictionPanel">
+        <h2>🎯 NEXT PITCH PREDICTION</h2>
+        <div class="prediction-main">
+            <div class="predicted-pitch">
+                <div class="type" id="predictedType">FB</div>
+                <div class="confidence" id="predictedConf">65% likely</div>
+            </div>
+            <div class="predicted-location" id="locationHeatmap">
+                <div class="loc-zone"></div>
+                <div class="loc-zone"></div>
+                <div class="loc-zone"></div>
+                <div class="loc-zone"></div>
+                <div class="loc-zone hot"></div>
+                <div class="loc-zone"></div>
+                <div class="loc-zone"></div>
+                <div class="loc-zone"></div>
+                <div class="loc-zone"></div>
+            </div>
+        </div>
+        <div class="pitch-mix" id="pitchMix">
+            <div class="mix-item"><div class="pct">45%</div><div class="name">FB</div></div>
+            <div class="mix-item"><div class="pct">25%</div><div class="name">CB</div></div>
+            <div class="mix-item"><div class="pct">20%</div><div class="name">SL</div></div>
+            <div class="mix-item"><div class="pct">10%</div><div class="name">CH</div></div>
+        </div>
+    </div>
+
+    <!-- Current At-Bat -->
+    <div class="current-ab">
+        <div class="ab-header">
+            <div class="player-info">
+                <span class="player-name" id="batterName">Waiting for batter...</span>
+                <span class="player-tag" id="batterTag">-</span>
+            </div>
+            <div class="player-info">
+                <span class="player-tag" id="pitcherTag">-</span>
+                <span class="player-name" id="pitcherName">Waiting for pitcher...</span>
+            </div>
+        </div>
+        <div class="pitch-sequence" id="pitchSequence">
+            <!-- Pitch sequence will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Insights -->
+    <div class="insights">
+        <h3>💡 LIVE INSIGHTS</h3>
+        <div class="insight-list" id="insightList">
+            <div class="insight-item">
+                <span class="insight-icon">⏳</span>
+                <span class="insight-text">Waiting for pitch data...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Pitches -->
+    <div class="recent-pitches">
+        <h3>📋 RECENT PITCHES</h3>
+        <div class="pitch-log" id="pitchLog">
+            <div class="no-data">
+                <div class="icon">⚾</div>
+                <div>No pitches recorded yet</div>
+                <div style="font-size: 0.85em; margin-top: 8px;">Start logging from the Entry app</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// State
+let gameState = {
+    pitches: [],
+    currentBatter: '',
+    currentPitcher: '',
+    balls: 0,
+    strikes: 0,
+    outs: 0,
+    inning: 1
+};
+
+// Pitch stats for predictions
+let pitcherStats = {
+    pitchCounts: {},
+    countTendencies: {},
+    locationTendencies: {}
+};
+
+// Poll localStorage for updates (since we can't use Firebase without setup)
+function pollForUpdates() {
+    const saved = localStorage.getItem('scoutTrackerState');
+    if (saved) {
+        try {
+            const state = JSON.parse(saved);
+            if (state.pitches && state.pitches.length !== gameState.pitches.length) {
+                gameState = state;
+                updateDisplay();
+                analyzePitcher();
+                generatePrediction();
+                generateInsights();
+            }
+            
+            // Update basic state even if pitches haven't changed
+            document.getElementById('balls').textContent = state.balls || 0;
+            document.getElementById('strikes').textContent = state.strikes || 0;
+            document.getElementById('outs').textContent = state.outs || 0;
+            document.getElementById('inning').textContent = state.inning || 1;
+            document.getElementById('totalPitches').textContent = state.totalPitches || 0;
+            
+            document.getElementById('syncText').textContent = 'Connected';
+            document.getElementById('syncDot').style.background = '#38a169';
+        } catch (e) {
+            console.error('Error parsing state:', e);
+        }
+    }
+}
+
+// Update display with current data
+function updateDisplay() {
+    const pitches = gameState.pitches || [];
+    
+    // Update batter/pitcher
+    if (pitches.length > 0) {
+        const lastPitch = pitches[pitches.length - 1];
+        document.getElementById('batterName').textContent = lastPitch.batter || 'Unknown';
+        document.getElementById('pitcherName').textContent = lastPitch.pitcher || 'Unknown';
+    }
+    
+    // Update pitch sequence for current AB
+    const currentABPitches = getCurrentABPitches();
+    renderPitchSequence(currentABPitches);
+    
+    // Update recent pitches log
+    renderRecentPitches(pitches.slice(-10).reverse());
+}
+
+function getCurrentABPitches() {
+    const pitches = gameState.pitches || [];
+    if (pitches.length === 0) return [];
+    
+    // Find pitches from current at-bat (since last out/walk/hit)
+    const abPitches = [];
+    for (let i = pitches.length - 1; i >= 0; i--) {
+        const p = pitches[i];
+        abPitches.unshift(p);
+        if (['walk', 'strikeout_looking', 'strikeout_swinging', 'out', 'single', 'extra_base_hit', 'error'].includes(p.result)) {
+            abPitches.shift(); // Remove the ending pitch from current AB
+            break;
+        }
+    }
+    return abPitches;
+}
+
+function renderPitchSequence(pitches) {
+    const container = document.getElementById('pitchSequence');
+    if (pitches.length === 0) {
+        container.innerHTML = '<span style="opacity: 0.5; font-size: 0.9em;">No pitches this AB</span>';
+        return;
+    }
+    
+    container.innerHTML = pitches.map((p, i) => {
+        let className = 'seq-pitch ';
+        if (p.result === 'ball') className += 'ball';
+        else if (p.result.includes('strike') || p.result === 'called_strike' || p.result === 'swinging_strike') className += 'strike';
+        else if (p.result === 'foul') className += 'foul';
+        else className += 'inplay';
+        
+        return `
+            <div class="${className}">
+                <span class="num">${i + 1}</span>
+                <span class="type">${p.pitchType || '?'}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderRecentPitches(pitches) {
+    const container = document.getElementById('pitchLog');
+    if (pitches.length === 0) {
+        container.innerHTML = `
+            <div class="no-data">
+                <div class="icon">⚾</div>
+                <div>No pitches recorded yet</div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = pitches.map(p => {
+        let resultClass = '';
+        if (p.result === 'ball') resultClass = 'ball';
+        else if (p.result.includes('strike') || p.result === 'foul') resultClass = 'strike';
+        else if (p.result === 'single' || p.result === 'extra_base_hit') resultClass = 'hit';
+        
+        return `
+            <div class="log-item">
+                <span class="log-pitch">${p.pitchType || '?'} @ ${p.zone || '?'}</span>
+                <span class="log-count">${p.count}</span>
+                <span class="log-result ${resultClass}">${p.result.replace('_', ' ')}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Analyze pitcher tendencies
+function analyzePitcher() {
+    const pitches = gameState.pitches || [];
+    if (pitches.length < 3) return;
+    
+    // Reset stats
+    pitcherStats = {
+        pitchCounts: {},
+        countTendencies: {},
+        locationTendencies: {},
+        totalPitches: 0
+    };
+    
+    pitches.forEach(p => {
+        if (!p.pitchType || p.pitchType === '?') return;
+        
+        // Count pitch types
+        pitcherStats.pitchCounts[p.pitchType] = (pitcherStats.pitchCounts[p.pitchType] || 0) + 1;
+        pitcherStats.totalPitches++;
+        
+        // Count tendencies (what they throw in certain counts)
+        const count = p.count || '0-0';
+        if (!pitcherStats.countTendencies[count]) {
+            pitcherStats.countTendencies[count] = {};
+        }
+        pitcherStats.countTendencies[count][p.pitchType] = 
+            (pitcherStats.countTendencies[count][p.pitchType] || 0) + 1;
+        
+        // Location tendencies
+        if (p.zone && p.zone !== '?') {
+            pitcherStats.locationTendencies[p.pitchType] = 
+                pitcherStats.locationTendencies[p.pitchType] || {};
+            pitcherStats.locationTendencies[p.pitchType][p.zone] = 
+                (pitcherStats.locationTendencies[p.pitchType][p.zone] || 0) + 1;
+        }
+    });
+    
+    // Update pitch mix display
+    updatePitchMix();
+}
+
+function updatePitchMix() {
+    const container = document.getElementById('pitchMix');
+    const total = pitcherStats.totalPitches || 1;
+    
+    const sorted = Object.entries(pitcherStats.pitchCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+    
+    if (sorted.length === 0) {
+        container.innerHTML = '<span style="opacity: 0.5;">Not enough data</span>';
+        return;
+    }
+    
+    container.innerHTML = sorted.map(([type, count]) => {
+        const pct = Math.round((count / total) * 100);
+        return `
+            <div class="mix-item">
+                <div class="pct">${pct}%</div>
+                <div class="name">${type}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Generate prediction
+function generatePrediction() {
+    const pitches = gameState.pitches || [];
+    if (pitches.length < 5) {
+        document.getElementById('predictedType').textContent = '?';
+        document.getElementById('predictedConf').textContent = 'Need more data';
+        return;
+    }
+    
+    const currentCount = `${gameState.balls}-${gameState.strikes}`;
+    
+    // Check count tendencies first
+    let prediction = null;
+    let confidence = 0;
+    
+    if (pitcherStats.countTendencies[currentCount]) {
+        const countPitches = pitcherStats.countTendencies[currentCount];
+        const total = Object.values(countPitches).reduce((a, b) => a + b, 0);
+        
+        if (total >= 2) {
+            const sorted = Object.entries(countPitches).sort((a, b) => b[1] - a[1]);
+            prediction = sorted[0][0];
+            confidence = Math.round((sorted[0][1] / total) * 100);
+        }
+    }
+    
+    // Fall back to overall tendencies
+    if (!prediction && pitcherStats.totalPitches > 0) {
+        const sorted = Object.entries(pitcherStats.pitchCounts).sort((a, b) => b[1] - a[1]);
+        prediction = sorted[0][0];
+        confidence = Math.round((sorted[0][1] / pitcherStats.totalPitches) * 100);
+    }
+    
+    // Special count logic
+    if (gameState.balls === 3 && gameState.strikes < 2) {
+        // Likely fastball to get ahead
+        if (pitcherStats.pitchCounts['FB']) {
+            prediction = 'FB';
+            confidence = Math.min(confidence + 15, 85);
+        }
+    }
+    
+    if (gameState.strikes === 2) {
+        // More likely to throw breaking ball
+        const breakingBalls = ['CB', 'SL', 'CH'];
+        const hasBreaking = breakingBalls.some(b => pitcherStats.pitchCounts[b]);
+        if (hasBreaking && prediction === 'FB') {
+            confidence = Math.max(confidence - 20, 30);
+        }
+    }
+    
+    document.getElementById('predictedType').textContent = prediction || '?';
+    document.getElementById('predictedConf').textContent = prediction ? `${confidence}% likely` : 'Need more data';
+    
+    // Update location heatmap
+    updateLocationHeatmap(prediction);
+}
+
+function updateLocationHeatmap(pitchType) {
+    const zones = document.querySelectorAll('.loc-zone');
+    zones.forEach(z => z.className = 'loc-zone');
+    
+    if (!pitchType || !pitcherStats.locationTendencies[pitchType]) {
+        // Default to middle
+        zones[4].classList.add('hot');
+        return;
+    }
+    
+    const locs = pitcherStats.locationTendencies[pitchType];
+    const total = Object.values(locs).reduce((a, b) => a + b, 0);
+    
+    // Map zones to grid positions (simplified)
+    const zoneMap = {
+        '1': 0, '2': 1, '3': 2,
+        '4': 3, '5': 4, '6': 5,
+        '7': 6, '8': 7, '9': 8,
+        'HO': 0, 'HI': 2, 'MO': 3, 'MI': 5, 'LO': 6, 'LI': 8
+    };
+    
+    Object.entries(locs).forEach(([zone, count]) => {
+        const idx = zoneMap[zone];
+        if (idx !== undefined && zones[idx]) {
+            const pct = count / total;
+            if (pct > 0.3) zones[idx].classList.add('hot');
+            else if (pct > 0.15) zones[idx].classList.add('warm');
+        }
+    });
+}
+
+// Generate insights
+function generateInsights() {
+    const pitches = gameState.pitches || [];
+    const container = document.getElementById('insightList');
+    const insights = [];
+    
+    if (pitches.length < 5) {
+        container.innerHTML = `
+            <div class="insight-item">
+                <span class="insight-icon">⏳</span>
+                <span class="insight-text">Need at least 5 pitches for insights</span>
+            </div>
+        `;
+        return;
+    }
+    
+    // Check fastball percentage
+    const fbPct = pitcherStats.pitchCounts['FB'] ? 
+        Math.round((pitcherStats.pitchCounts['FB'] / pitcherStats.totalPitches) * 100) : 0;
+    
+    if (fbPct > 60) {
+        insights.push({
+            icon: '🎯',
+            text: `Fastball heavy (${fbPct}%) - sit on the heater`,
+            type: 'opportunity'
+        });
+    }
+    
+    // Check first pitch tendencies
+    const firstPitches = pitches.filter(p => p.count === '0-0');
+    if (firstPitches.length >= 3) {
+        const fpStrikes = firstPitches.filter(p => 
+            p.result.includes('strike') || p.result === 'foul' || p.result.includes('play')
+        ).length;
+        const fpStrikePct = Math.round((fpStrikes / firstPitches.length) * 100);
+        
+        if (fpStrikePct > 65) {
+            insights.push({
+                icon: '⚡',
+                text: `First pitch strike ${fpStrikePct}% - be ready to swing`,
+                type: 'warning'
+            });
+        } else if (fpStrikePct < 40) {
+            insights.push({
+                icon: '👀',
+                text: `First pitch strike only ${fpStrikePct}% - take early`,
+                type: 'opportunity'
+            });
+        }
+    }
+    
+    // Check 2-strike tendencies
+    const twoStrikePitches = pitches.filter(p => {
+        const parts = p.count.split('-');
+        return parseInt(parts[1]) === 2;
+    });
+    
+    if (twoStrikePitches.length >= 3) {
+        const breakingCount = twoStrikePitches.filter(p => 
+            ['CB', 'SL', 'CH'].includes(p.pitchType)
+        ).length;
+        const breakingPct = Math.round((breakingCount / twoStrikePitches.length) * 100);
+        
+        if (breakingPct > 50) {
+            insights.push({
+                icon: '🌀',
+                text: `${breakingPct}% breaking balls with 2 strikes - protect the plate`,
+                type: 'warning'
+            });
+        }
+    }
+    
+    // Recent pattern
+    const last5 = pitches.slice(-5);
+    const last5Types = last5.map(p => p.pitchType).filter(t => t && t !== '?');
+    if (last5Types.length >= 4) {
+        const fbCount = last5Types.filter(t => t === 'FB').length;
+        if (fbCount >= 4) {
+            insights.push({
+                icon: '🔥',
+                text: 'Heavy fastball run - adjust timing',
+                type: 'warning'
+            });
+        }
+        
+        const offspeedCount = last5Types.filter(t => ['CB', 'SL', 'CH'].includes(t)).length;
+        if (offspeedCount >= 4) {
+            insights.push({
+                icon: '🎢',
+                text: 'Lots of offspeed - stay back',
+                type: 'warning'
+            });
+        }
+    }
+    
+    // Render insights
+    if (insights.length === 0) {
+        insights.push({
+            icon: '📊',
+            text: 'Gathering data... more insights coming',
+            type: ''
+        });
+    }
+    
+    container.innerHTML = insights.map(i => `
+        <div class="insight-item ${i.type}">
+            <span class="insight-icon">${i.icon}</span>
+            <span class="insight-text">${i.text}</span>
+        </div>
+    `).join('');
+}
+
+// Poll every 500ms for updates
+setInterval(pollForUpdates, 500);
+
+// Initial poll
+pollForUpdates();
+</script>
+
+</body>
+</html>

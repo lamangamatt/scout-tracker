@@ -306,6 +306,71 @@
         
         .modal.visible { display: flex; }
         
+        /* Team Selection Modal */
+        .team-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .team-modal.hidden { display: none; }
+        .team-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .team-modal-content h2 {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        .team-modal-content p {
+            color: #718096;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .team-modal-content input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .team-modal-content input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .team-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .team-submit-btn:active { transform: scale(0.98); }
+        .team-hint {
+            font-size: 0.75em !important;
+            color: #a0aec0 !important;
+            margin-top: 16px !important;
+            margin-bottom: 0 !important;
+        }
+        
         .modal-content {
             background: white;
             border-radius: 12px;
@@ -391,11 +456,25 @@
     </style>
 </head>
 <body>
+    <!-- Team Selection Modal -->
+    <div id="teamSelectModal" class="team-modal">
+        <div class="team-modal-content">
+            <h2>🔥 Bullpen Tracker</h2>
+            <p>Enter your team code to get started</p>
+            <input type="text" id="teamCodeInput" placeholder="e.g., bingham2026" autocapitalize="none" autocorrect="off">
+            <button onclick="setTeamCode()" class="team-submit-btn">Start Tracking</button>
+            <p class="team-hint">Use the same team code across all Scout Tracker apps</p>
+        </div>
+    </div>
+
     <div class="header">
         <h1>🔥 Bullpen Tracker</h1>
-        <div class="nav-links">
-            <a href="entry.html">Game</a>
-            <a href="coach.html">Coach</a>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="nav-links">
+                <a href="entry.html">Game</a>
+                <a href="coach.html">Coach</a>
+            </div>
+            <button onclick="switchTeam()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer;">Switch</button>
         </div>
     </div>
     
@@ -572,6 +651,56 @@ assistant@school.edu"></textarea>
     </div>
 
 <script>
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+
+function checkTeamCode() {
+    if (!currentTeamCode) {
+        document.getElementById('teamSelectModal').classList.remove('hidden');
+    } else {
+        document.getElementById('teamSelectModal').classList.add('hidden');
+        document.querySelector('.header h1').textContent = '🔥 ' + currentTeamCode.toUpperCase();
+        loadData();
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    // Sanitize: only allow letters, numbers, hyphens
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamSelectModal').classList.add('hidden');
+    document.querySelector('.header h1').textContent = '🔥 ' + currentTeamCode.toUpperCase();
+    loadData();
+}
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+function getFirebasePath(path) {
+    return 'teams/' + currentTeamCode + '/' + path;
+}
+
+function switchTeam() {
+    if (confirm('Switch to a different team? Your current data is saved.')) {
+        localStorage.removeItem('scoutTrackerTeamCode');
+        location.reload();
+    }
+}
+
+// Initialize team check on load
+document.addEventListener('DOMContentLoaded', checkTeamCode);
+
 // State
 let state = {
     currentSession: {
@@ -589,7 +718,8 @@ let state = {
 
 // Load data
 function loadData() {
-    const saved = localStorage.getItem('bullpenTracker');
+    if (!currentTeamCode) return;
+    const saved = localStorage.getItem(getStorageKey('bullpenTracker'));
     if (saved) {
         const data = JSON.parse(saved);
         state.pitchers = data.pitchers || [];
@@ -601,7 +731,8 @@ function loadData() {
 }
 
 function saveData() {
-    localStorage.setItem('bullpenTracker', JSON.stringify({
+    if (!currentTeamCode) return;
+    localStorage.setItem(getStorageKey('bullpenTracker'), JSON.stringify({
         pitchers: state.pitchers,
         sessions: state.sessions,
         settings: state.settings
@@ -1000,8 +1131,7 @@ function emailSessionReport(session) {
     window.location.href = mailto;
 }
 
-// Initialize
-loadData();
+// Initialize - loadData() is called by checkTeamCode() after team is confirmed
 </script>
 </body>
 </html>

@@ -1,0 +1,44 @@
+{
+  "rules": {
+    "teams": {
+      "$teamCode": {
+        // Allow anyone with the team code to read/write their team's data
+        ".read": true,
+        ".write": true,
+        
+        // Team rosters and settings
+        "roster": {
+          ".validate": "newData.hasChildren()"
+        },
+        
+        // Game state (current game data)
+        "gameState": {
+          ".validate": "newData.hasChildren()"
+        },
+        
+        // Historical game data
+        "games": {
+          "$gameId": {
+            ".validate": "newData.hasChildren()"
+          }
+        },
+        
+        // Bullpen session data
+        "bullpen": {
+          "$sessionId": {
+            ".validate": "newData.hasChildren()"
+          }
+        },
+        
+        // Settings
+        "settings": {
+          ".validate": "newData.hasChildren()"
+        }
+      }
+    },
+    
+    // Deny access to everything outside teams/
+    ".read": false,
+    ".write": false
+  }
+}

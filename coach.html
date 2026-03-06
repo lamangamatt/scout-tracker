@@ -53,6 +53,72 @@
             50% { opacity: 0.5; }
         }
         
+        /* Team Selection Modal */
+        .team-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .team-modal.hidden { display: none; }
+        .team-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .team-modal-content h2 {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        .team-modal-content p {
+            color: #718096;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .team-modal-content input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #1a365d;
+        }
+        .team-modal-content input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .team-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .team-submit-btn:active { transform: scale(0.98); }
+        .team-hint {
+            font-size: 0.75em !important;
+            color: #a0aec0 !important;
+            margin-top: 16px !important;
+            margin-bottom: 0 !important;
+        }
+        
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -330,11 +396,25 @@
 </head>
 <body>
 
+<!-- Team Selection Modal -->
+<div id="teamSelectModal" class="team-modal">
+    <div class="team-modal-content">
+        <h2>📊 Coach View</h2>
+        <p>Enter your team code to view data</p>
+        <input type="text" id="teamCodeInput" placeholder="e.g., bingham2026" autocapitalize="none" autocorrect="off">
+        <button onclick="setTeamCode()" class="team-submit-btn">View Team Data</button>
+        <p class="team-hint">Use the same team code as your data entry app</p>
+    </div>
+</div>
+
 <header class="header">
     <h1>📊 Coach View</h1>
-    <div class="sync-indicator">
-        <div class="sync-dot" id="syncDot"></div>
-        <span id="syncText">Listening for data...</span>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="sync-indicator">
+            <div class="sync-dot" id="syncDot"></div>
+            <span id="syncText">Listening for data...</span>
+        </div>
+        <button onclick="switchTeam()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; cursor: pointer;">Switch</button>
     </div>
 </header>
 
@@ -433,6 +513,56 @@
 </div>
 
 <script>
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+
+function checkTeamCode() {
+    if (!currentTeamCode) {
+        document.getElementById('teamSelectModal').classList.remove('hidden');
+    } else {
+        document.getElementById('teamSelectModal').classList.add('hidden');
+        document.querySelector('.header h1').textContent = '📊 ' + currentTeamCode.toUpperCase();
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    // Sanitize: only allow letters, numbers, hyphens
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamSelectModal').classList.add('hidden');
+    document.querySelector('.header h1').textContent = '📊 ' + currentTeamCode.toUpperCase();
+    // Reload data for this team
+    pollForUpdates();
+}
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+function getFirebasePath(path) {
+    return 'teams/' + currentTeamCode + '/' + path;
+}
+
+function switchTeam() {
+    if (confirm('Switch to a different team? You\'ll need to enter the new team code.')) {
+        localStorage.removeItem('scoutTrackerTeamCode');
+        location.reload();
+    }
+}
+
+// Initialize team check on load
+document.addEventListener('DOMContentLoaded', checkTeamCode);
+
 // State
 let gameState = {
     pitches: [],
@@ -453,7 +583,8 @@ let pitcherStats = {
 
 // Poll localStorage for updates (since we can't use Firebase without setup)
 function pollForUpdates() {
-    const saved = localStorage.getItem('scoutTrackerState');
+    if (!currentTeamCode) return;
+    const saved = localStorage.getItem(getStorageKey('scoutTrackerState'));
     if (saved) {
         try {
             const state = JSON.parse(saved);

@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Tracker - Stats Dashboard</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+            --ball: #3182ce;
+            --strike: #e53e3e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 1.1em; }
+        
+        .header-btns { display: flex; gap: 8px; }
+        
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        
+        .header-btn:active { opacity: 0.8; }
+        
+        .container {
+            padding: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        /* Team Modal */
+        .team-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .team-modal.hidden { display: none; }
+        .team-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .team-modal-content h2 {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        .team-modal-content p {
+            color: #718096;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .team-modal-content input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .team-modal-content input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .team-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-row input, .filter-row select {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .filter-row input:focus, .filter-row select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .filter-btn {
+            padding: 10px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .filter-btn.clear {
+            background: #e2e8f0;
+            color: var(--dark);
+        }
+        
+        /* Stats Tabs */
+        .stats-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            background: #edf2f7;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        
+        .stats-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .stats-tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Section */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .section-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Team Summary Cards */
+        .team-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, var(--primary), #2c5282);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            text-align: center;
+        }
+        
+        .summary-card .value {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .summary-card .label {
+            font-size: 0.8em;
+            opacity: 0.85;
+        }
+        
+        .summary-card.success { background: linear-gradient(135deg, var(--success), #276749); }
+        .summary-card.warning { background: linear-gradient(135deg, var(--warning), #975a16); }
+        .summary-card.accent { background: linear-gradient(135deg, var(--accent), #c53030); }
+        
+        /* Stats Table */
+        .stats-table-container {
+            overflow-x: auto;
+            margin: -8px;
+            padding: 8px;
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+        
+        .stats-table th {
+            background: var(--primary);
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        
+        .stats-table th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+        
+        .stats-table th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+        
+        .stats-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #edf2f7;
+        }
+        
+        .stats-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        .stats-table .player-name {
+            font-weight: 600;
+            color: var(--dark);
+            white-space: nowrap;
+        }
+        
+        .stats-table .highlight {
+            background: #ebf8ff;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Bar Charts */
+        .chart-container {
+            margin-bottom: 16px;
+        }
+        
+        .chart-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 12px;
+        }
+        
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .bar-label {
+            width: 80px;
+            font-size: 0.85em;
+            font-weight: 500;
+            color: var(--dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .bar-container {
+            flex: 1;
+            height: 24px;
+            background: #edf2f7;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+        }
+        
+        .bar-fill.primary { background: var(--primary); }
+        .bar-fill.success { background: var(--success); }
+        .bar-fill.warning { background: var(--warning); }
+        .bar-fill.accent { background: var(--accent); }
+        
+        .bar-value {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: white;
+            white-space: nowrap;
+        }
+        
+        .bar-value-external {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--dark);
+            margin-left: 8px;
+            min-width: 40px;
+        }
+        
+        /* Pie Chart (CSS-based) */
+        .pie-chart-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .pie-chart {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .pie-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+        
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+        
+        /* Trend Chart */
+        .trend-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 100px;
+            padding: 10px 0;
+        }
+        
+        .trend-bar {
+            flex: 1;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 4px;
+            transition: height 0.3s ease;
+        }
+        
+        .trend-bar:hover {
+            opacity: 0.8;
+        }
+        
+        .trend-bar .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        
+        .trend-bar:hover .tooltip {
+            display: block;
+        }
+        
+        .trend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7em;
+            color: #718096;
+            margin-top: 4px;
+        }
+        
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #718096;
+        }
+        
+        .no-data .icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        /* Print Section */
+        .print-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .print-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .print-btn.primary { background: var(--primary); color: white; }
+        .print-btn.secondary { background: #e2e8f0; color: var(--dark); }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .header, .filter-section, .stats-tabs, .print-section, .header-btns {
+                display: none !important;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+            
+            .section {
+                box-shadow: none;
+                border: 1px solid #e2e8f0;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            .team-summary {
+                break-inside: avoid;
+            }
+            
+            .summary-card {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .stats-table th {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .bar-fill {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .print-header {
+                display: block !important;
+                text-align: center;
+                padding: 20px;
+                border-bottom: 2px solid var(--primary);
+                margin-bottom: 20px;
+            }
+            
+            .print-header h1 {
+                font-size: 1.5em;
+                color: var(--primary);
+                margin-bottom: 4px;
+            }
+            
+            .print-header .date {
+                color: #718096;
+                font-size: 0.9em;
+            }
+            
+            .tab-content {
+                display: block !important;
+            }
+        }
+        
+        .print-header {
+            display: none;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Team Selection Modal -->
+<div id="teamSelectModal" class="team-modal">
+    <div class="team-modal-content">
+        <h2>📊 Stats Dashboard</h2>
+        <p>Enter your team code to view stats</p>
+        <input type="text" id="teamCodeInput" placeholder="e.g., bingham2026" autocapitalize="none" autocorrect="off">
+        <button onclick="setTeamCode()" class="team-submit-btn">View Stats</button>
+    </div>
+</div>
+
+<header class="header">
+    <button class="header-btn" onclick="goBack()">← Back</button>
+    <h1>📊 Stats Dashboard</h1>
+    <div class="header-btns">
+        <button class="header-btn" onclick="window.print()">📄 PDF</button>
+        <button class="header-btn" onclick="switchTeam()">Switch</button>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Print Header (only shows when printing) -->
+    <div class="print-header">
+        <h1 id="printTeamName">Team Stats Report</h1>
+        <div class="date" id="printDate"></div>
+    </div>
+    
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <input type="date" id="filterFrom" placeholder="From">
+            <input type="date" id="filterTo" placeholder="To">
+            <select id="filterPlayer">
+                <option value="">All Players</option>
+            </select>
+            <button class="filter-btn" onclick="applyFilter()">Filter</button>
+            <button class="filter-btn clear" onclick="clearFilter()">Clear</button>
+        </div>
+    </div>
+    
+    <!-- Stats Tabs -->
+    <div class="stats-tabs">
+        <button class="stats-tab active" data-tab="team" onclick="switchTab('team')">🏟️ Team</button>
+        <button class="stats-tab" data-tab="batting" onclick="switchTab('batting')">⚾ Batting</button>
+        <button class="stats-tab" data-tab="pitching" onclick="switchTab('pitching')">⚡ Pitching</button>
+    </div>
+    
+    <!-- Team Stats Tab -->
+    <div id="teamTab" class="tab-content active">
+        <!-- Team Summary Cards -->
+        <div class="team-summary" id="teamSummary">
+            <div class="summary-card">
+                <div class="value" id="totalGames">0</div>
+                <div class="label">Games Played</div>
+            </div>
+            <div class="summary-card success">
+                <div class="value" id="teamRecord">0-0</div>
+                <div class="label">Record</div>
+            </div>
+            <div class="summary-card warning">
+                <div class="value" id="teamAvg">.000</div>
+                <div class="label">Team AVG</div>
+            </div>
+            <div class="summary-card accent">
+                <div class="value" id="teamStrikePct">0%</div>
+                <div class="label">Strike %</div>
+            </div>
+        </div>
+        
+        <!-- Team Batting Stats -->
+        <div class="section">
+            <div class="section-title">⚾ Team Batting Summary</div>
+            <div class="team-summary" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
+                <div class="summary-card" style="padding: 12px;">
+                    <div class="value" id="teamHits" style="font-size: 1.5em;">0</div>
+                    <div class="label">Hits</div>
+                </div>
+                <div class="summary-card success" style="padding: 12px;">
+                    <div class="value" id="teamWalks" style="font-size: 1.5em;">0</div>
+                    <div class="label">Walks</div>
+                </div>
+                <div class="summary-card accent" style="padding: 12px;">
+                    <div class="value" id="teamKs" style="font-size: 1.5em;">0</div>
+                    <div class="label">K's</div>
+                </div>
+                <div class="summary-card warning" style="padding: 12px;">
+                    <div class="value" id="teamKPct" style="font-size: 1.5em;">0%</div>
+                    <div class="label">K%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Performers Chart -->
+        <div class="section">
+            <div class="section-title">🏆 Top Performers - Batting Average</div>
+            <div class="chart-container">
+                <div class="bar-chart" id="topBattersChart">
+                    <!-- Bars rendered via JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pitch Type Distribution -->
+        <div class="section">
+            <div class="section-title">⚡ Pitch Type Distribution</div>
+            <div class="pie-chart-container" id="pitchTypeChart">
+                <!-- Chart rendered via JS -->
+            </div>
+        </div>
+        
+        <!-- Recent Performance Trend -->
+        <div class="section">
+            <div class="section-title">📈 Last 5 Games - Pitching Performance</div>
+            <div class="chart-container">
+                <div class="chart-title">Strike % by Game</div>
+                <div class="trend-chart" id="trendChart">
+                    <!-- Trend bars rendered via JS -->
+                </div>
+                <div class="trend-labels" id="trendLabels">
+                    <!-- Labels rendered via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Batting Stats Tab -->
+    <div id="battingTab" class="tab-content">
+        <div class="section">
+            <div class="section-title">⚾ Player Batting Statistics</div>
+            <div class="stats-table-container">
+                <table class="stats-table" id="battingTable">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>G</th>
+                            <th>AB</th>
+                            <th>H</th>
+                            <th>AVG</th>
+                            <th>1B</th>
+                            <th>2B+</th>
+                            <th>BB</th>
+                            <th>K</th>
+                            <th>BB%</th>
+                            <th>K%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="battingTableBody">
+                        <!-- Rows rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Top Batters Chart -->
+        <div class="section">
+            <div class="section-title">🔥 Hits Leaders</div>
+            <div class="bar-chart" id="hitsLeadersChart"></div>
+        </div>
+    </div>
+    
+    <!-- Pitching Stats Tab -->
+    <div id="pitchingTab" class="tab-content">
+        <div class="section">
+            <div class="section-title">⚡ Player Pitching Statistics</div>
+            <div class="stats-table-container">
+                <table class="stats-table" id="pitchingTable">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>G</th>
+                            <th>Pitches</th>
+                            <th>Str</th>
+                            <th>Ball</th>
+                            <th>Str%</th>
+                            <th>K</th>
+                            <th>BB</th>
+                            <th>K/BB</th>
+                            <th>P/Inn</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pitchingTableBody">
+                        <!-- Rows rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Strikeout Leaders Chart -->
+        <div class="section">
+            <div class="section-title">💪 Strikeout Leaders</div>
+            <div class="bar-chart" id="strikeoutLeadersChart"></div>
+        </div>
+        
+        <!-- Strike % Leaders -->
+        <div class="section">
+            <div class="section-title">🎯 Strike % Leaders</div>
+            <div class="bar-chart" id="strikePctLeadersChart"></div>
+        </div>
+    </div>
+    
+    <!-- Print Section -->
+    <div class="print-section">
+        <button class="print-btn primary" onclick="window.print()">📄 Export PDF</button>
+        <button class="print-btn secondary" onclick="shareStats()">📤 Share</button>
+    </div>
+</div>
+
+<script>
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+let games = [];
+let filteredGames = [];
+
+function checkTeamCode() {
+    if (!currentTeamCode) {
+        document.getElementById('teamSelectModal').classList.remove('hidden');
+    } else {
+        document.getElementById('teamSelectModal').classList.add('hidden');
+        document.querySelector('.header h1').textContent = '📊 ' + currentTeamCode.toUpperCase();
+        document.getElementById('printTeamName').textContent = currentTeamCode.toUpperCase() + ' - Stats Report';
+        document.getElementById('printDate').textContent = 'Generated: ' + new Date().toLocaleDateString();
+        loadGames();
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamSelectModal').classList.add('hidden');
+    document.querySelector('.header h1').textContent = '📊 ' + currentTeamCode.toUpperCase();
+    loadGames();
+}
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+function switchTeam() {
+    if (confirm('Switch to a different team?')) {
+        localStorage.removeItem('scoutTrackerTeamCode');
+        location.reload();
+    }
+}
+
+function goBack() {
+    window.location.href = 'index.html';
+}
+
+// Tab Switching
+function switchTab(tab) {
+    document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+}
+
+// Load games from localStorage
+function loadGames() {
+    const saved = localStorage.getItem(getStorageKey('history'));
+    games = saved ? JSON.parse(saved) : [];
+    filteredGames = [...games];
+    
+    populatePlayerFilter();
+    calculateStats();
+}
+
+// Populate player filter dropdown
+function populatePlayerFilter() {
+    const players = new Set();
+    
+    games.forEach(game => {
+        (game.pitches || []).forEach(p => {
+            if (p.batter) players.add(p.batter);
+            if (p.pitcher) players.add(p.pitcher);
+        });
+    });
+    
+    const select = document.getElementById('filterPlayer');
+    select.innerHTML = '<option value="">All Players</option>' +
+        Array.from(players).sort().map(p => `<option value="${p}">${p}</option>`).join('');
+}
+
+// Filter functions
+function applyFilter() {
+    const fromDate = document.getElementById('filterFrom').value;
+    const toDate = document.getElementById('filterTo').value;
+    const player = document.getElementById('filterPlayer').value;
+    
+    filteredGames = games.filter(game => {
+        const gameDate = new Date(game.date).toISOString().split('T')[0];
+        if (fromDate && gameDate < fromDate) return false;
+        if (toDate && gameDate > toDate) return false;
+        
+        if (player) {
+            const hasPlayer = (game.pitches || []).some(p => 
+                p.batter === player || p.pitcher === player
+            );
+            if (!hasPlayer) return false;
+        }
+        
+        return true;
+    });
+    
+    calculateStats();
+}
+
+function clearFilter() {
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value = '';
+    document.getElementById('filterPlayer').value = '';
+    filteredGames = [...games];
+    calculateStats();
+}
+
+// Calculate all statistics
+function calculateStats() {
+    if (filteredGames.length === 0) {
+        renderNoData();
+        return;
+    }
+    
+    const allPitches = filteredGames.flatMap(g => g.pitches || []);
+    
+    // Team stats
+    const teamStats = calculateTeamStats(filteredGames, allPitches);
+    renderTeamStats(teamStats);
+    
+    // Batting stats by player
+    const battingStats = calculateBattingStats(allPitches);
+    renderBattingStats(battingStats);
+    
+    // Pitching stats by player
+    const pitchingStats = calculatePitchingStats(allPitches);
+    renderPitchingStats(pitchingStats);
+    
+    // Charts
+    renderTopBattersChart(battingStats);
+    renderPitchTypeChart(allPitches);
+    renderTrendChart(filteredGames);
+    renderHitsLeadersChart(battingStats);
+    renderStrikeoutLeadersChart(pitchingStats);
+    renderStrikePctLeadersChart(pitchingStats);
+}
+
+function calculateTeamStats(games, pitches) {
+    const stats = {
+        games: games.length,
+        wins: 0,
+        losses: 0,
+        totalAB: 0,
+        totalHits: 0,
+        totalWalks: 0,
+        totalKs: 0,
+        totalPitches: pitches.length,
+        totalStrikes: 0,
+        totalBalls: 0
+    };
+    
+    pitches.forEach(p => {
+        // Count at-bats and results
+        if (isAtBatEnd(p.result)) {
+            stats.totalAB++;
+            
+            if (p.result === 'single' || p.result === 'extra_base_hit') {
+                stats.totalHits++;
+            } else if (p.result === 'walk') {
+                stats.totalWalks++;
+            } else if (p.result === 'strikeout_looking' || p.result === 'strikeout_swinging') {
+                stats.totalKs++;
+            }
+        }
+        
+        // Count strikes/balls
+        if (isStrike(p.result)) {
+            stats.totalStrikes++;
+        } else if (p.result === 'ball') {
+            stats.totalBalls++;
+        }
+    });
+    
+    // Calculate record from games (simplified - could be enhanced)
+    games.forEach(g => {
+        if (g.result === 'win') stats.wins++;
+        else if (g.result === 'loss') stats.losses++;
+    });
+    
+    return stats;
+}
+
+function calculateBattingStats(pitches) {
+    const playerStats = {};
+    
+    // Group pitches by batter
+    pitches.forEach(p => {
+        if (!p.batter || p.batter === 'Unknown') return;
+        
+        if (!playerStats[p.batter]) {
+            playerStats[p.batter] = {
+                name: p.batter,
+                games: new Set(),
+                atBats: 0,
+                hits: 0,
+                singles: 0,
+                extraBaseHits: 0,
+                walks: 0,
+                strikeouts: 0,
+                plateAppearances: 0
+            };
+        }
+        
+        const s = playerStats[p.batter];
+        
+        // Track unique games
+        if (p.inning) {
+            s.games.add(p.timestamp ? new Date(p.timestamp).toDateString() : 'game');
+        }
+        
+        // Count results
+        if (isAtBatEnd(p.result)) {
+            s.plateAppearances++;
+            
+            if (p.result === 'single') {
+                s.atBats++;
+                s.hits++;
+                s.singles++;
+            } else if (p.result === 'extra_base_hit') {
+                s.atBats++;
+                s.hits++;
+                s.extraBaseHits++;
+            } else if (p.result === 'walk') {
+                s.walks++;
+            } else if (p.result === 'strikeout_looking' || p.result === 'strikeout_swinging') {
+                s.atBats++;
+                s.strikeouts++;
+            } else if (p.result === 'out' || p.result === 'error') {
+                s.atBats++;
+            }
+        }
+    });
+    
+    // Convert to array and calculate rates
+    return Object.values(playerStats).map(s => ({
+        ...s,
+        games: s.games.size,
+        avg: s.atBats > 0 ? (s.hits / s.atBats).toFixed(3) : '.000',
+        bbPct: s.plateAppearances > 0 ? Math.round((s.walks / s.plateAppearances) * 100) : 0,
+        kPct: s.plateAppearances > 0 ? Math.round((s.strikeouts / s.plateAppearances) * 100) : 0
+    })).sort((a, b) => parseFloat(b.avg) - parseFloat(a.avg));
+}
+
+function calculatePitchingStats(pitches) {
+    const playerStats = {};
+    
+    // Group pitches by pitcher
+    pitches.forEach(p => {
+        if (!p.pitcher || p.pitcher === 'Unknown') return;
+        
+        if (!playerStats[p.pitcher]) {
+            playerStats[p.pitcher] = {
+                name: p.pitcher,
+                games: new Set(),
+                pitches: 0,
+                strikes: 0,
+                balls: 0,
+                strikeouts: 0,
+                walks: 0,
+                hitsAllowed: 0,
+                innings: new Set()
+            };
+        }
+        
+        const s = playerStats[p.pitcher];
+        s.pitches++;
+        
+        // Track unique games and innings
+        const gameKey = p.timestamp ? new Date(p.timestamp).toDateString() : 'game';
+        s.games.add(gameKey);
+        if (p.inning) {
+            s.innings.add(gameKey + '_' + p.inning);
+        }
+        
+        // Count results
+        if (isStrike(p.result)) {
+            s.strikes++;
+        } else if (p.result === 'ball') {
+            s.balls++;
+        }
+        
+        if (p.result === 'strikeout_looking' || p.result === 'strikeout_swinging') {
+            s.strikeouts++;
+        } else if (p.result === 'walk') {
+            s.walks++;
+        } else if (p.result === 'single' || p.result === 'extra_base_hit') {
+            s.hitsAllowed++;
+        }
+    });
+    
+    // Convert to array and calculate rates
+    return Object.values(playerStats).map(s => ({
+        ...s,
+        games: s.games.size,
+        innings: s.innings.size,
+        strikePct: s.pitches > 0 ? Math.round((s.strikes / s.pitches) * 100) : 0,
+        kBBRatio: s.walks > 0 ? (s.strikeouts / s.walks).toFixed(2) : s.strikeouts.toFixed(2),
+        pitchesPerInning: s.innings.size > 0 ? (s.pitches / s.innings.size).toFixed(1) : '-'
+    })).sort((a, b) => b.strikeouts - a.strikeouts);
+}
+
+// Helper functions
+function isAtBatEnd(result) {
+    return ['single', 'extra_base_hit', 'out', 'error', 'walk', 'strikeout_looking', 'strikeout_swinging'].includes(result);
+}
+
+function isStrike(result) {
+    return ['called_strike', 'swinging_strike', 'foul', 'strikeout_looking', 'strikeout_swinging', 
+            'single', 'extra_base_hit', 'out', 'error'].includes(result);
+}
+
+// Render functions
+function renderNoData() {
+    document.getElementById('teamSummary').innerHTML = `
+        <div class="no-data" style="grid-column: 1/-1;">
+            <div class="icon">📊</div>
+            <p>No game data found</p>
+            <p style="font-size: 0.85em; margin-top: 8px;">
+                Play games and track pitches to see stats here!
+            </p>
+        </div>
+    `;
+}
+
+function renderTeamStats(stats) {
+    document.getElementById('totalGames').textContent = stats.games;
+    document.getElementById('teamRecord').textContent = `${stats.wins}-${stats.losses}`;
+    document.getElementById('teamAvg').textContent = stats.totalAB > 0 ? 
+        (stats.totalHits / stats.totalAB).toFixed(3) : '.000';
+    document.getElementById('teamStrikePct').textContent = stats.totalPitches > 0 ?
+        Math.round((stats.totalStrikes / stats.totalPitches) * 100) + '%' : '0%';
+    
+    document.getElementById('teamHits').textContent = stats.totalHits;
+    document.getElementById('teamWalks').textContent = stats.totalWalks;
+    document.getElementById('teamKs').textContent = stats.totalKs;
+    document.getElementById('teamKPct').textContent = stats.totalAB > 0 ?
+        Math.round((stats.totalKs / stats.totalAB) * 100) + '%' : '0%';
+}
+
+function renderBattingStats(stats) {
+    const tbody = document.getElementById('battingTableBody');
+    
+    if (stats.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: #718096; padding: 20px;">No batting data available</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = stats.map(s => {
+        const avgClass = parseFloat(s.avg) >= 0.300 ? 'highlight' : '';
+        return `
+            <tr>
+                <td class="player-name">${s.name}</td>
+                <td>${s.games}</td>
+                <td>${s.atBats}</td>
+                <td>${s.hits}</td>
+                <td class="${avgClass}">${s.avg}</td>
+                <td>${s.singles}</td>
+                <td>${s.extraBaseHits}</td>
+                <td>${s.walks}</td>
+                <td>${s.strikeouts}</td>
+                <td>${s.bbPct}%</td>
+                <td>${s.kPct}%</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderPitchingStats(stats) {
+    const tbody = document.getElementById('pitchingTableBody');
+    
+    if (stats.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #718096; padding: 20px;">No pitching data available</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = stats.map(s => {
+        const strClass = s.strikePct >= 65 ? 'highlight' : '';
+        return `
+            <tr>
+                <td class="player-name">${s.name}</td>
+                <td>${s.games}</td>
+                <td>${s.pitches}</td>
+                <td>${s.strikes}</td>
+                <td>${s.balls}</td>
+                <td class="${strClass}">${s.strikePct}%</td>
+                <td>${s.strikeouts}</td>
+                <td>${s.walks}</td>
+                <td>${s.kBBRatio}</td>
+                <td>${s.pitchesPerInning}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderTopBattersChart(stats) {
+    const container = document.getElementById('topBattersChart');
+    const top5 = stats.filter(s => s.atBats >= 3).slice(0, 5);
+    
+    if (top5.length === 0) {
+        container.innerHTML = '<div class="no-data" style="padding: 20px;">Need at least 3 at-bats per player</div>';
+        return;
+    }
+    
+    const maxAvg = Math.max(...top5.map(s => parseFloat(s.avg)), 0.400);
+    
+    container.innerHTML = top5.map((s, i) => {
+        const width = (parseFloat(s.avg) / maxAvg) * 100;
+        const colors = ['primary', 'success', 'warning', 'accent', 'primary'];
+        return `
+            <div class="bar-row">
+                <span class="bar-label">${s.name.split(' ').pop()}</span>
+                <div class="bar-container">
+                    <div class="bar-fill ${colors[i]}" style="width: ${width}%">
+                        <span class="bar-value">${s.avg}</span>
+                    </div>
+                </div>
+                <span class="bar-value-external">${s.hits}H</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderPitchTypeChart(pitches) {
+    const container = document.getElementById('pitchTypeChart');
+    
+    // Count pitch types
+    const typeCounts = {};
+    pitches.forEach(p => {
+        if (p.pitchType && p.pitchType !== '?') {
+            typeCounts[p.pitchType] = (typeCounts[p.pitchType] || 0) + 1;
+        }
+    });
+    
+    const total = Object.values(typeCounts).reduce((a, b) => a + b, 0);
+    
+    if (total === 0) {
+        container.innerHTML = '<div class="no-data" style="padding: 20px;">No pitch type data</div>';
+        return;
+    }
+    
+    const sorted = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+    const colors = ['#1a365d', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#3182ce'];
+    
+    // Create gradient for pie chart
+    let gradientParts = [];
+    let currentDeg = 0;
+    
+    sorted.forEach(([type, count], i) => {
+        const pct = (count / total) * 100;
+        const nextDeg = currentDeg + (pct * 3.6);
+        gradientParts.push(`${colors[i % colors.length]} ${currentDeg}deg ${nextDeg}deg`);
+        currentDeg = nextDeg;
+    });
+    
+    // Bar chart alternative (more reliable)
+    const maxCount = sorted[0][1];
+    
+    container.innerHTML = `
+        <div style="flex: 1;">
+            <div class="bar-chart">
+                ${sorted.slice(0, 6).map(([type, count], i) => {
+                    const width = (count / maxCount) * 100;
+                    const pct = Math.round((count / total) * 100);
+                    return `
+                        <div class="bar-row">
+                            <span class="bar-label" style="width: 50px;">${type}</span>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width: ${width}%; background: ${colors[i % colors.length]}">
+                                    <span class="bar-value">${pct}%</span>
+                                </div>
+                            </div>
+                            <span class="bar-value-external">${count}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+        <div class="pie-legend">
+            ${sorted.slice(0, 6).map(([type, count], i) => {
+                const pct = Math.round((count / total) * 100);
+                return `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${colors[i % colors.length]}"></div>
+                        <span>${type}: ${pct}% (${count})</span>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderTrendChart(games) {
+    const container = document.getElementById('trendChart');
+    const labels = document.getElementById('trendLabels');
+    
+    const last5 = games.slice(-5);
+    
+    if (last5.length === 0) {
+        container.innerHTML = '<div class="no-data" style="padding: 20px;">No games to show trend</div>';
+        labels.innerHTML = '';
+        return;
+    }
+    
+    // Calculate strike % for each game
+    const gameStats = last5.map(g => {
+        const pitches = g.pitches || [];
+        let strikes = 0;
+        pitches.forEach(p => {
+            if (isStrike(p.result)) strikes++;
+        });
+        return {
+            date: new Date(g.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            strikePct: pitches.length > 0 ? Math.round((strikes / pitches.length) * 100) : 0,
+            pitches: pitches.length
+        };
+    });
+    
+    const maxPct = Math.max(...gameStats.map(s => s.strikePct), 100);
+    
+    container.innerHTML = gameStats.map(s => {
+        const height = (s.strikePct / maxPct) * 100;
+        return `
+            <div class="trend-bar" style="height: ${height}%">
+                <span class="tooltip">${s.strikePct}% (${s.pitches} pitches)</span>
+            </div>
+        `;
+    }).join('');
+    
+    labels.innerHTML = gameStats.map(s => `<span>${s.date}</span>`).join('');
+}
+
+function renderHitsLeadersChart(stats) {
+    const container = document.getElementById('hitsLeadersChart');
+    const top5 = stats.filter(s => s.hits > 0).sort((a, b) => b.hits - a.hits).slice(0, 5);
+    
+    if (top5.length === 0) {
+        container.innerHTML = '<div class="no-data" style="padding: 20px;">No hits recorded</div>';
+        return;
+    }
+    
+    const maxHits = top5[0].hits;
+    
+    container.innerHTML = top5.map((s, i) => {
+        const width = (s.hits / maxHits) * 100;
+        return `
+            <div class="bar-row">
+                <span class="bar-label">${s.name.split(' ').pop()}</span>
+                <div class="bar-container">
+                    <div class="bar-fill success" style="width: ${width}%">
+                        <span class="bar-value">${s.hits}</span>
+                    </div>
+                </div>
+                <span class="bar-value-external">${s.avg}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderStrikeoutLeadersChart(stats) {
+    const container = document.getElementById('strikeoutLeadersChart');
+    const top5 = stats.filter(s => s.strikeouts > 0).slice(0, 5);
+    
+    if (top5.length === 0) {
+        container.innerHTML = '<div class="no-data" style="padding: 20px;">No strikeouts recorded</div>';
+        return;
+    }
+    
+    const maxK = top5[0].strikeouts;
+    
+    container.innerHTML = top5.map((s, i) => {
+        const width = (s.strikeouts / maxK) * 100;
+        return `
+            <div class="bar-row">
+                <span class="bar-label">${s.name.split(' ').pop()}</span>
+                <div class="bar-container">
+                    <div class="bar-fill accent" style="width: ${width}%">
+                        <span class="bar-value">${s.strikeouts}</span>
+                    </div>
+                </div>
+                <span class="bar-value-external">${s.pitches}P</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderStrikePctLeadersChart(stats) {
+    const container = document.getElementById('strikePctLeadersChart');
+    const qualified = stats.filter(s => s.pitches >= 20).sort((a, b) => b.strikePct - a.strikePct).slice(0, 5);
+    
+    if (qualified.length === 0) {
+        container.innerHTML = '<div class="no-data" style="padding: 20px;">Need at least 20 pitches to qualify</div>';
+        return;
+    }
+    
+    container.innerHTML = qualified.map((s, i) => {
+        const width = s.strikePct;
+        const color = s.strikePct >= 65 ? 'success' : s.strikePct >= 55 ? 'warning' : 'accent';
+        return `
+            <div class="bar-row">
+                <span class="bar-label">${s.name.split(' ').pop()}</span>
+                <div class="bar-container">
+                    <div class="bar-fill ${color}" style="width: ${width}%">
+                        <span class="bar-value">${s.strikePct}%</span>
+                    </div>
+                </div>
+                <span class="bar-value-external">${s.pitches}P</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Share stats
+function shareStats() {
+    const teamStats = document.getElementById('totalGames').textContent;
+    const teamAvg = document.getElementById('teamAvg').textContent;
+    const teamStrikePct = document.getElementById('teamStrikePct').textContent;
+    
+    const text = `📊 ${currentTeamCode.toUpperCase()} Stats Summary
+Games: ${teamStats}
+Team AVG: ${teamAvg}
+Strike %: ${teamStrikePct}
+
+View full stats in Scout Tracker!`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: `${currentTeamCode.toUpperCase()} Stats`,
+            text: text
+        }).catch(console.error);
+    } else {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Stats copied to clipboard!');
+        }).catch(() => {
+            alert('Could not share. Try the PDF export instead.');
+        });
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', checkTeamCode);
+
+// Enter key support
+document.getElementById('teamCodeInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') setTeamCode();
+});
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW failed:', err));
+    });
+}
+</script>
+
+</body>
+</html>

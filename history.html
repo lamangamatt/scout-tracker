@@ -448,6 +448,99 @@
         .delete-btn:active {
             background: #feb2b2;
         }
+        
+        /* Export Button */
+        .export-btn {
+            margin-top: 8px;
+            margin-bottom: 8px;
+            padding: 10px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .export-btn:active {
+            opacity: 0.9;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .header, .filter-section, .delete-btn, .export-btn, .expand-icon {
+                display: none !important;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+            
+            .game-card {
+                box-shadow: none;
+                border: 1px solid #e2e8f0;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            .game-details {
+                display: block !important;
+            }
+            
+            .game-header {
+                cursor: default;
+            }
+            
+            .pitcher-row, .inning-box {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .pitch-log {
+                max-height: none;
+                overflow: visible;
+            }
+            
+            .print-header {
+                display: block !important;
+                text-align: center;
+                padding: 20px;
+                border-bottom: 2px solid var(--primary);
+                margin-bottom: 20px;
+            }
+            
+            .print-header h1 {
+                font-size: 1.3em;
+                color: var(--primary);
+                margin-bottom: 4px;
+            }
+            
+            .print-header .date {
+                color: #718096;
+                font-size: 0.9em;
+            }
+            
+            .tabs {
+                display: none !important;
+            }
+            
+            .pitch-log {
+                display: block !important;
+            }
+        }
+        
+        .print-header {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -469,6 +562,12 @@
 </header>
 
 <div class="container">
+    <!-- Print Header (only shows when printing) -->
+    <div class="print-header">
+        <h1 id="printTitle">Game Summary</h1>
+        <div class="date" id="printDate"></div>
+    </div>
+    
     <!-- Filter Section -->
     <div class="filter-section">
         <div class="filter-row">
@@ -659,6 +758,7 @@ function renderGames() {
                         </div>
                     </div>
                     
+                    <button class="export-btn" onclick="exportGame(${index})">📄 Export Game PDF</button>
                     <button class="delete-btn" onclick="deleteGame(${index})">🗑️ Delete This Game</button>
                 </div>
             </div>
@@ -775,6 +875,47 @@ function deleteGame(index) {
         filteredGames = [...games];
         renderGames();
     }
+}
+
+function exportGame(index) {
+    const game = filteredGames[index];
+    if (!game) return;
+    
+    // Expand the game card for printing
+    const card = document.getElementById(`game-${index}`);
+    card.classList.add('expanded');
+    
+    // Show pitch log
+    const pitchLog = document.getElementById(`pitch-log-${index}`);
+    if (pitchLog) pitchLog.style.display = 'block';
+    
+    // Update print header
+    const date = new Date(game.date);
+    const dateStr = date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric',
+        year: 'numeric'
+    });
+    
+    document.getElementById('printTitle').textContent = 
+        `Game vs ${game.battingTeam || 'Opponent'} - ${currentTeamCode.toUpperCase()}`;
+    document.getElementById('printDate').textContent = dateStr;
+    
+    // Hide other games temporarily for printing
+    document.querySelectorAll('.game-card').forEach((c, i) => {
+        if (i !== index) c.style.display = 'none';
+    });
+    
+    // Print
+    window.print();
+    
+    // Restore visibility after printing
+    setTimeout(() => {
+        document.querySelectorAll('.game-card').forEach(c => {
+            c.style.display = '';
+        });
+    }, 100);
 }
 
 // Initialize

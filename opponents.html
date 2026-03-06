@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Tracker - Opponent Database</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+            --purple: #805ad5;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 1.1em; display: flex; align-items: center; gap: 8px; }
+        .header-btns { display: flex; gap: 8px; }
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        .header-btn:active { transform: scale(0.95); }
+        
+        .container {
+            padding: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Team Selection Modal */
+        .team-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .team-modal.hidden { display: none; }
+        .team-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+        }
+        .team-modal-content h2 { font-size: 1.5em; margin-bottom: 8px; color: var(--primary); }
+        .team-modal-content p { color: #718096; margin-bottom: 20px; font-size: 0.9em; }
+        .team-modal-content input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .team-modal-content input:focus { outline: none; border-color: var(--primary); }
+        .team-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .tab.active { background: var(--primary); color: white; }
+        
+        /* Section */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .section-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Team Card */
+        .team-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .team-card:hover { background: #edf2f7; }
+        .team-card:active { transform: scale(0.98); }
+        .team-info h3 { font-size: 1.1em; color: var(--dark); margin-bottom: 4px; }
+        .team-info p { font-size: 0.8em; color: #718096; }
+        .team-record {
+            text-align: right;
+        }
+        .team-record .record { font-size: 1.2em; font-weight: 700; color: var(--primary); }
+        .team-record .last-played { font-size: 0.75em; color: #a0aec0; }
+        
+        /* Player Card */
+        .player-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .player-card:hover { background: #edf2f7; }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .player-name { font-size: 1em; font-weight: 600; color: var(--dark); }
+        .player-number {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 700;
+        }
+        .player-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .player-tag {
+            font-size: 0.7em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(26, 54, 93, 0.1);
+            color: var(--primary);
+        }
+        .player-tag.batter { background: #ebf8ff; color: #2b6cb0; }
+        .player-tag.pitcher { background: #faf5ff; color: var(--purple); }
+        .player-notes {
+            font-size: 0.8em;
+            color: #718096;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0aec0;
+        }
+        .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+        .empty-state p { margin-bottom: 16px; }
+        
+        /* Add Button */
+        .add-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .add-btn:active { transform: scale(0.95); }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-start;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal.visible { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 450px;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .modal-header h3 { font-size: 1.2em; color: var(--primary); }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #a0aec0;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-textarea { min-height: 80px; resize: vertical; }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        
+        /* Checkbox Group */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--light);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-item.selected { background: var(--primary); color: white; }
+        .checkbox-item input { display: none; }
+        .checkbox-item span { font-size: 0.85em; font-weight: 500; }
+        
+        /* Radio Group */
+        .radio-group {
+            display: flex;
+            gap: 8px;
+        }
+        .radio-item {
+            flex: 1;
+            padding: 10px;
+            background: var(--light);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .radio-item.selected { border-color: var(--primary); background: #ebf4ff; }
+        .radio-item input { display: none; }
+        
+        /* Subsection */
+        .subsection {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        .subsection-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        /* Save/Cancel Buttons */
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-cancel { background: #e2e8f0; color: var(--dark); }
+        .btn-delete { background: var(--accent); color: white; }
+        
+        /* History List */
+        .history-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+        }
+        .history-date { color: #718096; }
+        .history-results { font-weight: 600; }
+        
+        /* Back to view */
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary);
+            font-weight: 600;
+            background: none;
+            border: none;
+            padding: 10px 0;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Team Selection Modal -->
+<div id="teamSelectModal" class="team-modal">
+    <div class="team-modal-content">
+        <h2>🔍 Opponent Database</h2>
+        <p>Enter your team code to access opponent data</p>
+        <input type="text" id="teamCodeInput" placeholder="e.g., bingham2026" autocapitalize="none" autocorrect="off">
+        <button onclick="setTeamCode()" class="team-submit-btn">Continue</button>
+    </div>
+</div>
+
+<header class="header">
+    <h1><span>🔍</span> Opponents</h1>
+    <div class="header-btns">
+        <button class="header-btn" onclick="location.href='scouting.html'">📋 Scouting</button>
+        <button class="header-btn" onclick="location.href='index.html'">🏠</button>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" data-tab="teams" onclick="switchTab('teams')">Teams</button>
+        <button class="tab" data-tab="players" onclick="switchTab('players')">All Players</button>
+    </div>
+    
+    <!-- Teams Tab -->
+    <div id="teamsTab">
+        <div class="section">
+            <div class="section-title">
+                <span>Opponent Teams</span>
+                <button class="add-btn" onclick="showTeamModal()">+ Add Team</button>
+            </div>
+            <div id="teamsList">
+                <div class="empty-state">
+                    <div class="icon">🏟️</div>
+                    <p>No opponent teams yet</p>
+                    <button class="add-btn" onclick="showTeamModal()">Add First Team</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Players Tab -->
+    <div id="playersTab" style="display: none;">
+        <div class="section">
+            <div class="section-title">
+                <span>All Opponent Players</span>
+            </div>
+            <div id="allPlayersList">
+                <div class="empty-state">
+                    <div class="icon">👤</div>
+                    <p>No players in database</p>
+                    <p style="font-size: 0.85em;">Add teams first, then add players to each team</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Team Detail View -->
+    <div id="teamDetailView" style="display: none;">
+        <button class="back-btn" onclick="showTeamsList()">← Back to Teams</button>
+        
+        <div class="section">
+            <div class="section-title">
+                <span id="teamDetailName">Team Name</span>
+                <button class="add-btn" onclick="editCurrentTeam()">✏️ Edit</button>
+            </div>
+            <div id="teamDetailInfo" style="margin-bottom: 16px;"></div>
+            
+            <div class="section-title" style="margin-top: 16px;">
+                <span>Players</span>
+                <button class="add-btn" onclick="showPlayerModal()">+ Add Player</button>
+            </div>
+            <div id="teamPlayersList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Team Modal -->
+<div class="modal" id="teamModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="teamModalTitle">Add Opponent Team</h3>
+            <button class="close-btn" onclick="closeTeamModal()">&times;</button>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Team Name</label>
+            <input type="text" class="form-input" id="oppTeamName" placeholder="e.g., Riverton Hawks">
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Record vs Them</label>
+                <div class="form-row">
+                    <input type="number" class="form-input" id="oppWins" placeholder="W" min="0" value="0">
+                    <input type="number" class="form-input" id="oppLosses" placeholder="L" min="0" value="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Last Played</label>
+                <input type="date" class="form-input" id="oppLastPlayed">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="oppTeamNotes" placeholder="General notes about this team..."></textarea>
+        </div>
+        
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeTeamModal()">Cancel</button>
+            <button class="btn-save" onclick="saveTeam()">Save Team</button>
+        </div>
+        
+        <div id="deleteTeamBtn" style="display: none; margin-top: 12px;">
+            <button class="btn-delete" style="width: 100%;" onclick="deleteTeam()">🗑️ Delete Team</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Player Modal -->
+<div class="modal" id="playerModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="playerModalTitle">Add Player</h3>
+            <button class="close-btn" onclick="closePlayerModal()">&times;</button>
+        </div>
+        
+        <!-- Basic Info -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-input" id="playerName" placeholder="John Smith">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Number</label>
+                <input type="text" class="form-input" id="playerNumber" placeholder="23">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Player Type</label>
+            <div class="radio-group" id="playerType">
+                <label class="radio-item selected" data-value="batter">
+                    <input type="radio" name="playerType" value="batter" checked>
+                    <span>⚾ Batter</span>
+                </label>
+                <label class="radio-item" data-value="pitcher">
+                    <input type="radio" name="playerType" value="pitcher">
+                    <span>⚡ Pitcher</span>
+                </label>
+                <label class="radio-item" data-value="both">
+                    <input type="radio" name="playerType" value="both">
+                    <span>🌟 Both</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Batter Fields -->
+        <div id="batterFields">
+            <div class="subsection">
+                <div class="subsection-title">🏏 Batting Info</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Bats</label>
+                    <div class="radio-group" id="batsHand">
+                        <label class="radio-item selected" data-value="R">
+                            <input type="radio" name="batsHand" value="R" checked><span>Right</span>
+                        </label>
+                        <label class="radio-item" data-value="L">
+                            <input type="radio" name="batsHand" value="L"><span>Left</span>
+                        </label>
+                        <label class="radio-item" data-value="S">
+                            <input type="radio" name="batsHand" value="S"><span>Switch</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Pull Tendency</label>
+                    <div class="radio-group" id="pullTendency">
+                        <label class="radio-item" data-value="heavy">
+                            <input type="radio" name="pullTendency" value="heavy"><span>Heavy Pull</span>
+                        </label>
+                        <label class="radio-item selected" data-value="moderate">
+                            <input type="radio" name="pullTendency" value="moderate" checked><span>Moderate</span>
+                        </label>
+                        <label class="radio-item" data-value="opposite">
+                            <input type="radio" name="pullTendency" value="opposite"><span>Oppo</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Ball Flight</label>
+                    <div class="radio-group" id="ballFlight">
+                        <label class="radio-item" data-value="ground">
+                            <input type="radio" name="ballFlight" value="ground"><span>Ground</span>
+                        </label>
+                        <label class="radio-item selected" data-value="line">
+                            <input type="radio" name="ballFlight" value="line" checked><span>Line</span>
+                        </label>
+                        <label class="radio-item" data-value="fly">
+                            <input type="radio" name="ballFlight" value="fly"><span>Fly</span>
+                        </label>
+                        <label class="radio-item" data-value="mixed">
+                            <input type="radio" name="ballFlight" value="mixed"><span>Mixed</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Weaknesses</label>
+                    <textarea class="form-textarea" id="batterWeaknesses" placeholder="e.g., Can't catch up to high heat, chases breaking balls"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Strengths</label>
+                    <textarea class="form-textarea" id="batterStrengths" placeholder="e.g., Good eye, hits curves well, patient"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pitcher Fields -->
+        <div id="pitcherFields" style="display: none;">
+            <div class="subsection">
+                <div class="subsection-title">⚡ Pitching Info</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Throws</label>
+                    <div class="radio-group" id="throwsHand">
+                        <label class="radio-item selected" data-value="R">
+                            <input type="radio" name="throwsHand" value="R" checked><span>Right</span>
+                        </label>
+                        <label class="radio-item" data-value="L">
+                            <input type="radio" name="throwsHand" value="L"><span>Left</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Pitch Repertoire</label>
+                    <div class="checkbox-group" id="pitchRepertoire">
+                        <label class="checkbox-item selected"><input type="checkbox" value="FB" checked><span>FB</span></label>
+                        <label class="checkbox-item"><input type="checkbox" value="CB"><span>CB</span></label>
+                        <label class="checkbox-item"><input type="checkbox" value="SL"><span>SL</span></label>
+                        <label class="checkbox-item"><input type="checkbox" value="CH"><span>CH</span></label>
+                        <label class="checkbox-item"><input type="checkbox" value="CT"><span>CT</span></label>
+                        <label class="checkbox-item"><input type="checkbox" value="SI"><span>SI</span></label>
+                        <label class="checkbox-item"><input type="checkbox" value="SP"><span>SP</span></label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Fastball Velocity</label>
+                    <input type="text" class="form-input" id="fbVelocity" placeholder="e.g., 82-86">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">First Pitch Tendency</label>
+                    <input type="text" class="form-input" id="firstPitchTendency" placeholder="e.g., Fastball 70%">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">When Ahead (0-2, 1-2)</label>
+                    <input type="text" class="form-input" id="aheadApproach" placeholder="e.g., Goes to curveball">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">When Behind (2-0, 3-1)</label>
+                    <input type="text" class="form-input" id="behindApproach" placeholder="e.g., Comes back with fastball">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Two-Strike Approach</label>
+                    <input type="text" class="form-input" id="twoStrikeApproach" placeholder="e.g., Curveball in dirt">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Fatigue Notes</label>
+                    <textarea class="form-textarea" id="fatigueNotes" placeholder="e.g., Loses velocity after 60 pitches"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">How to Beat Them</label>
+                    <textarea class="form-textarea" id="pitcherWeaknesses" placeholder="e.g., Be patient, work counts, lay off first pitch curve"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- General Notes -->
+        <div class="form-group">
+            <label class="form-label">Additional Notes</label>
+            <textarea class="form-textarea" id="playerNotes" placeholder="Any other observations..."></textarea>
+        </div>
+        
+        <!-- History (read-only) -->
+        <div class="subsection" id="playerHistorySection" style="display: none;">
+            <div class="subsection-title">📊 History vs This Player</div>
+            <div class="history-list" id="playerHistory"></div>
+        </div>
+        
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closePlayerModal()">Cancel</button>
+            <button class="btn-save" onclick="savePlayer()">Save Player</button>
+        </div>
+        
+        <div id="deletePlayerBtn" style="display: none; margin-top: 12px;">
+            <button class="btn-delete" style="width: 100%;" onclick="deletePlayer()">🗑️ Delete Player</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+let currentViewingTeamId = null;
+let editingTeamId = null;
+let editingPlayerId = null;
+
+function checkTeamCode() {
+    if (!currentTeamCode) {
+        document.getElementById('teamSelectModal').classList.remove('hidden');
+    } else {
+        document.getElementById('teamSelectModal').classList.add('hidden');
+        loadOpponents();
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamSelectModal').classList.add('hidden');
+    loadOpponents();
+}
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+// Opponent Data Management
+function getOpponents() {
+    const data = localStorage.getItem(getStorageKey('opponents'));
+    return data ? JSON.parse(data) : {};
+}
+
+function saveOpponents(opponents) {
+    localStorage.setItem(getStorageKey('opponents'), JSON.stringify(opponents));
+}
+
+function generateId() {
+    return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Load and render opponents
+function loadOpponents() {
+    renderTeamsList();
+    renderAllPlayersList();
+}
+
+function renderTeamsList() {
+    const opponents = getOpponents();
+    const container = document.getElementById('teamsList');
+    const teams = Object.entries(opponents);
+    
+    if (teams.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🏟️</div>
+                <p>No opponent teams yet</p>
+                <button class="add-btn" onclick="showTeamModal()">Add First Team</button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = teams.map(([id, team]) => {
+        const playerCount = Object.keys(team.players || {}).length;
+        const record = team.record || { wins: 0, losses: 0 };
+        const lastPlayed = team.lastPlayed ? formatDate(team.lastPlayed) : 'Never';
+        
+        return `
+            <div class="team-card" onclick="viewTeam('${id}')">
+                <div class="team-info">
+                    <h3>${team.name}</h3>
+                    <p>${playerCount} player${playerCount !== 1 ? 's' : ''} tracked</p>
+                </div>
+                <div class="team-record">
+                    <div class="record">${record.wins}-${record.losses}</div>
+                    <div class="last-played">Last: ${lastPlayed}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderAllPlayersList() {
+    const opponents = getOpponents();
+    const container = document.getElementById('allPlayersList');
+    
+    const allPlayers = [];
+    Object.entries(opponents).forEach(([teamId, team]) => {
+        Object.entries(team.players || {}).forEach(([playerId, player]) => {
+            allPlayers.push({ ...player, teamId, playerId, teamName: team.name });
+        });
+    });
+    
+    if (allPlayers.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">👤</div>
+                <p>No players in database</p>
+                <p style="font-size: 0.85em;">Add teams first, then add players to each team</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort by name
+    allPlayers.sort((a, b) => a.name.localeCompare(b.name));
+    
+    container.innerHTML = allPlayers.map(p => renderPlayerCard(p, p.teamId, p.playerId, true)).join('');
+}
+
+function renderPlayerCard(player, teamId, playerId, showTeam = false) {
+    const tags = [];
+    if (player.type === 'batter' || player.type === 'both') {
+        tags.push(`<span class="player-tag batter">Bats ${player.bats || 'R'}</span>`);
+        if (player.pullTendency) tags.push(`<span class="player-tag">${player.pullTendency} pull</span>`);
+        if (player.ballFlight) tags.push(`<span class="player-tag">${player.ballFlight} ball</span>`);
+    }
+    if (player.type === 'pitcher' || player.type === 'both') {
+        tags.push(`<span class="player-tag pitcher">Throws ${player.throws || 'R'}</span>`);
+        if (player.pitches && player.pitches.length > 0) {
+            tags.push(`<span class="player-tag">${player.pitches.join('/')}</span>`);
+        }
+    }
+    
+    const notesPreview = player.weaknesses || player.notes || '';
+    const teamLabel = showTeam ? `<span class="player-tag" style="background: #fed7d7; color: #c53030;">${player.teamName}</span>` : '';
+    
+    return `
+        <div class="player-card" onclick="editPlayer('${teamId}', '${playerId}')">
+            <div class="player-header">
+                <span class="player-name">${player.name}</span>
+                <span class="player-number">#${player.number || '?'}</span>
+            </div>
+            <div class="player-tags">
+                ${teamLabel}
+                ${tags.join('')}
+            </div>
+            ${notesPreview ? `<div class="player-notes">"${notesPreview.substring(0, 60)}${notesPreview.length > 60 ? '...' : ''}"</div>` : ''}
+        </div>
+    `;
+}
+
+// Tab switching
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    
+    document.getElementById('teamsTab').style.display = tab === 'teams' ? 'block' : 'none';
+    document.getElementById('playersTab').style.display = tab === 'players' ? 'block' : 'none';
+    document.getElementById('teamDetailView').style.display = 'none';
+}
+
+// Team Detail View
+function viewTeam(teamId) {
+    currentViewingTeamId = teamId;
+    const opponents = getOpponents();
+    const team = opponents[teamId];
+    
+    if (!team) return;
+    
+    document.getElementById('teamsTab').style.display = 'none';
+    document.getElementById('teamDetailView').style.display = 'block';
+    document.getElementById('teamDetailName').textContent = team.name;
+    
+    const record = team.record || { wins: 0, losses: 0 };
+    const lastPlayed = team.lastPlayed ? formatDate(team.lastPlayed) : 'Never';
+    
+    document.getElementById('teamDetailInfo').innerHTML = `
+        <p style="color: #718096; font-size: 0.9em;">
+            Record: <strong>${record.wins}-${record.losses}</strong> | 
+            Last played: <strong>${lastPlayed}</strong>
+            ${team.notes ? `<br><em>"${team.notes}"</em>` : ''}
+        </p>
+    `;
+    
+    renderTeamPlayers(team, teamId);
+}
+
+function renderTeamPlayers(team, teamId) {
+    const container = document.getElementById('teamPlayersList');
+    const players = Object.entries(team.players || {});
+    
+    if (players.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="padding: 20px;">
+                <div class="icon">👤</div>
+                <p>No players tracked for this team</p>
+                <button class="add-btn" onclick="showPlayerModal()">Add First Player</button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = players.map(([playerId, player]) => 
+        renderPlayerCard(player, teamId, playerId)
+    ).join('');
+}
+
+function showTeamsList() {
+    currentViewingTeamId = null;
+    document.getElementById('teamDetailView').style.display = 'none';
+    document.getElementById('teamsTab').style.display = 'block';
+    renderTeamsList();
+}
+
+function editCurrentTeam() {
+    if (currentViewingTeamId) {
+        editTeam(currentViewingTeamId);
+    }
+}
+
+// Team Modal
+function showTeamModal(teamId = null) {
+    editingTeamId = teamId;
+    const modal = document.getElementById('teamModal');
+    const title = document.getElementById('teamModalTitle');
+    const deleteBtn = document.getElementById('deleteTeamBtn');
+    
+    if (teamId) {
+        title.textContent = 'Edit Team';
+        deleteBtn.style.display = 'block';
+        
+        const opponents = getOpponents();
+        const team = opponents[teamId];
+        if (team) {
+            document.getElementById('oppTeamName').value = team.name || '';
+            document.getElementById('oppWins').value = (team.record?.wins) || 0;
+            document.getElementById('oppLosses').value = (team.record?.losses) || 0;
+            document.getElementById('oppLastPlayed').value = team.lastPlayed || '';
+            document.getElementById('oppTeamNotes').value = team.notes || '';
+        }
+    } else {
+        title.textContent = 'Add Opponent Team';
+        deleteBtn.style.display = 'none';
+        document.getElementById('oppTeamName').value = '';
+        document.getElementById('oppWins').value = 0;
+        document.getElementById('oppLosses').value = 0;
+        document.getElementById('oppLastPlayed').value = '';
+        document.getElementById('oppTeamNotes').value = '';
+    }
+    
+    modal.classList.add('visible');
+}
+
+function editTeam(teamId) {
+    showTeamModal(teamId);
+}
+
+function closeTeamModal() {
+    document.getElementById('teamModal').classList.remove('visible');
+    editingTeamId = null;
+}
+
+function saveTeam() {
+    const name = document.getElementById('oppTeamName').value.trim();
+    if (!name) {
+        alert('Please enter a team name');
+        return;
+    }
+    
+    const opponents = getOpponents();
+    const teamId = editingTeamId || generateId();
+    
+    opponents[teamId] = {
+        ...(opponents[teamId] || {}),
+        name,
+        record: {
+            wins: parseInt(document.getElementById('oppWins').value) || 0,
+            losses: parseInt(document.getElementById('oppLosses').value) || 0
+        },
+        lastPlayed: document.getElementById('oppLastPlayed').value || null,
+        notes: document.getElementById('oppTeamNotes').value.trim(),
+        players: opponents[teamId]?.players || {}
+    };
+    
+    saveOpponents(opponents);
+    closeTeamModal();
+    loadOpponents();
+    
+    if (currentViewingTeamId === teamId) {
+        viewTeam(teamId);
+    }
+}
+
+function deleteTeam() {
+    if (!editingTeamId) return;
+    
+    const opponents = getOpponents();
+    const team = opponents[editingTeamId];
+    const playerCount = Object.keys(team?.players || {}).length;
+    
+    const confirmMsg = playerCount > 0 
+        ? `Delete "${team.name}" and all ${playerCount} players? This cannot be undone.`
+        : `Delete "${team.name}"? This cannot be undone.`;
+    
+    if (confirm(confirmMsg)) {
+        delete opponents[editingTeamId];
+        saveOpponents(opponents);
+        closeTeamModal();
+        showTeamsList();
+    }
+}
+
+// Player Modal
+function showPlayerModal(playerId = null) {
+    if (!currentViewingTeamId && !playerId) {
+        alert('Please select a team first');
+        return;
+    }
+    
+    editingPlayerId = playerId;
+    const modal = document.getElementById('playerModal');
+    const title = document.getElementById('playerModalTitle');
+    const deleteBtn = document.getElementById('deletePlayerBtn');
+    const historySection = document.getElementById('playerHistorySection');
+    
+    // Reset form
+    document.getElementById('playerName').value = '';
+    document.getElementById('playerNumber').value = '';
+    document.getElementById('batterWeaknesses').value = '';
+    document.getElementById('batterStrengths').value = '';
+    document.getElementById('fbVelocity').value = '';
+    document.getElementById('firstPitchTendency').value = '';
+    document.getElementById('aheadApproach').value = '';
+    document.getElementById('behindApproach').value = '';
+    document.getElementById('twoStrikeApproach').value = '';
+    document.getElementById('fatigueNotes').value = '';
+    document.getElementById('pitcherWeaknesses').value = '';
+    document.getElementById('playerNotes').value = '';
+    
+    // Reset radio buttons
+    selectRadio('playerType', 'batter');
+    selectRadio('batsHand', 'R');
+    selectRadio('pullTendency', 'moderate');
+    selectRadio('ballFlight', 'line');
+    selectRadio('throwsHand', 'R');
+    
+    // Reset checkboxes
+    document.querySelectorAll('#pitchRepertoire .checkbox-item').forEach(item => {
+        const val = item.querySelector('input').value;
+        item.classList.toggle('selected', val === 'FB');
+        item.querySelector('input').checked = val === 'FB';
+    });
+    
+    updatePlayerTypeFields();
+    
+    if (playerId) {
+        title.textContent = 'Edit Player';
+        deleteBtn.style.display = 'block';
+        
+        // Find player across all teams if needed
+        const opponents = getOpponents();
+        let player = null;
+        let foundTeamId = currentViewingTeamId;
+        
+        if (currentViewingTeamId && opponents[currentViewingTeamId]?.players[playerId]) {
+            player = opponents[currentViewingTeamId].players[playerId];
+        } else {
+            // Search all teams
+            for (const [tid, team] of Object.entries(opponents)) {
+                if (team.players && team.players[playerId]) {
+                    player = team.players[playerId];
+                    foundTeamId = tid;
+                    currentViewingTeamId = tid;
+                    break;
+                }
+            }
+        }
+        
+        if (player) {
+            document.getElementById('playerName').value = player.name || '';
+            document.getElementById('playerNumber').value = player.number || '';
+            selectRadio('playerType', player.type || 'batter');
+            selectRadio('batsHand', player.bats || 'R');
+            selectRadio('pullTendency', player.pullTendency || 'moderate');
+            selectRadio('ballFlight', player.ballFlight || 'line');
+            selectRadio('throwsHand', player.throws || 'R');
+            
+            document.getElementById('batterWeaknesses').value = player.weaknesses || '';
+            document.getElementById('batterStrengths').value = player.strengths || '';
+            document.getElementById('fbVelocity').value = player.fbVelocity || '';
+            document.getElementById('firstPitchTendency').value = player.firstPitchTendency || '';
+            document.getElementById('aheadApproach').value = player.aheadApproach || '';
+            document.getElementById('behindApproach').value = player.behindApproach || '';
+            document.getElementById('twoStrikeApproach').value = player.twoStrikeApproach || '';
+            document.getElementById('fatigueNotes').value = player.fatigueNotes || '';
+            document.getElementById('pitcherWeaknesses').value = player.pitcherWeaknesses || '';
+            document.getElementById('playerNotes').value = player.notes || '';
+            
+            // Set pitch repertoire
+            const pitches = player.pitches || ['FB'];
+            document.querySelectorAll('#pitchRepertoire .checkbox-item').forEach(item => {
+                const val = item.querySelector('input').value;
+                item.classList.toggle('selected', pitches.includes(val));
+                item.querySelector('input').checked = pitches.includes(val);
+            });
+            
+            // Show history if available
+            if (player.history && player.history.length > 0) {
+                historySection.style.display = 'block';
+                document.getElementById('playerHistory').innerHTML = player.history.map(h => `
+                    <div class="history-item">
+                        <span class="history-date">${formatDate(h.date)}</span>
+                        <span class="history-results">${h.results.join(', ')}</span>
+                    </div>
+                `).join('');
+            } else {
+                historySection.style.display = 'none';
+            }
+            
+            updatePlayerTypeFields();
+        }
+    } else {
+        title.textContent = 'Add Player';
+        deleteBtn.style.display = 'none';
+        historySection.style.display = 'none';
+    }
+    
+    modal.classList.add('visible');
+}
+
+function editPlayer(teamId, playerId) {
+    currentViewingTeamId = teamId;
+    showPlayerModal(playerId);
+}
+
+function closePlayerModal() {
+    document.getElementById('playerModal').classList.remove('visible');
+    editingPlayerId = null;
+}
+
+function savePlayer() {
+    const name = document.getElementById('playerName').value.trim();
+    if (!name) {
+        alert('Please enter a player name');
+        return;
+    }
+    
+    if (!currentViewingTeamId) {
+        alert('No team selected');
+        return;
+    }
+    
+    const opponents = getOpponents();
+    if (!opponents[currentViewingTeamId]) {
+        alert('Team not found');
+        return;
+    }
+    
+    const playerId = editingPlayerId || generateId();
+    const existingPlayer = opponents[currentViewingTeamId].players?.[playerId] || {};
+    
+    const playerType = getSelectedRadio('playerType');
+    const pitches = [];
+    document.querySelectorAll('#pitchRepertoire .checkbox-item.selected input').forEach(input => {
+        pitches.push(input.value);
+    });
+    
+    const player = {
+        ...existingPlayer,
+        name,
+        number: document.getElementById('playerNumber').value.trim(),
+        type: playerType,
+        bats: getSelectedRadio('batsHand'),
+        throws: getSelectedRadio('throwsHand'),
+        pullTendency: getSelectedRadio('pullTendency'),
+        ballFlight: getSelectedRadio('ballFlight'),
+        weaknesses: document.getElementById('batterWeaknesses').value.trim(),
+        strengths: document.getElementById('batterStrengths').value.trim(),
+        pitches,
+        fbVelocity: document.getElementById('fbVelocity').value.trim(),
+        firstPitchTendency: document.getElementById('firstPitchTendency').value.trim(),
+        aheadApproach: document.getElementById('aheadApproach').value.trim(),
+        behindApproach: document.getElementById('behindApproach').value.trim(),
+        twoStrikeApproach: document.getElementById('twoStrikeApproach').value.trim(),
+        fatigueNotes: document.getElementById('fatigueNotes').value.trim(),
+        pitcherWeaknesses: document.getElementById('pitcherWeaknesses').value.trim(),
+        notes: document.getElementById('playerNotes').value.trim(),
+        history: existingPlayer.history || []
+    };
+    
+    if (!opponents[currentViewingTeamId].players) {
+        opponents[currentViewingTeamId].players = {};
+    }
+    opponents[currentViewingTeamId].players[playerId] = player;
+    
+    saveOpponents(opponents);
+    closePlayerModal();
+    
+    if (document.getElementById('teamDetailView').style.display !== 'none') {
+        viewTeam(currentViewingTeamId);
+    }
+    renderAllPlayersList();
+}
+
+function deletePlayer() {
+    if (!editingPlayerId || !currentViewingTeamId) return;
+    
+    const opponents = getOpponents();
+    const player = opponents[currentViewingTeamId]?.players?.[editingPlayerId];
+    
+    if (confirm(`Delete "${player?.name}"? This cannot be undone.`)) {
+        delete opponents[currentViewingTeamId].players[editingPlayerId];
+        saveOpponents(opponents);
+        closePlayerModal();
+        
+        if (document.getElementById('teamDetailView').style.display !== 'none') {
+            viewTeam(currentViewingTeamId);
+        }
+        renderAllPlayersList();
+    }
+}
+
+// Radio/Checkbox Helpers
+function selectRadio(groupId, value) {
+    document.querySelectorAll(`#${groupId} .radio-item`).forEach(item => {
+        const isSelected = item.dataset.value === value;
+        item.classList.toggle('selected', isSelected);
+        item.querySelector('input').checked = isSelected;
+    });
+}
+
+function getSelectedRadio(groupId) {
+    const selected = document.querySelector(`#${groupId} .radio-item.selected`);
+    return selected ? selected.dataset.value : null;
+}
+
+// Player type toggle
+function updatePlayerTypeFields() {
+    const type = getSelectedRadio('playerType');
+    document.getElementById('batterFields').style.display = (type === 'batter' || type === 'both') ? 'block' : 'none';
+    document.getElementById('pitcherFields').style.display = (type === 'pitcher' || type === 'both') ? 'block' : 'none';
+}
+
+// Event listeners for radio buttons
+document.querySelectorAll('.radio-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const group = item.closest('.radio-group');
+        group.querySelectorAll('.radio-item').forEach(i => i.classList.remove('selected'));
+        item.classList.add('selected');
+        item.querySelector('input').checked = true;
+        
+        if (group.id === 'playerType') {
+            updatePlayerTypeFields();
+        }
+    });
+});
+
+// Event listeners for checkboxes
+document.querySelectorAll('.checkbox-item').forEach(item => {
+    item.addEventListener('click', () => {
+        item.classList.toggle('selected');
+        item.querySelector('input').checked = item.classList.contains('selected');
+    });
+});
+
+// Utility
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', checkTeamCode);
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW failed:', err));
+    });
+}
+</script>
+
+</body>
+</html>

@@ -659,6 +659,11 @@
                 <option value="">Select Pitcher...</option>
             </select>
         </div>
+        <div id="scoutingBtnRow" style="display: none; margin-top: 10px;">
+            <button class="quick-btn" id="scoutingReportBtn" onclick="showScoutingModal()" style="width: 100%; background: linear-gradient(135deg, #805ad5, #553c9a); color: white; padding: 12px; font-size: 0.9em;">
+                📋 View Scouting Report
+            </button>
+        </div>
     </div>
 
     <!-- Pitcher Pitch Count Alert -->
@@ -871,6 +876,41 @@ pitchingcoach@school.edu" style="width: 100%; padding: 10px; border: 2px solid #
         <div class="modal-buttons">
             <button class="cancel" onclick="closeSettingsModal()">Cancel</button>
             <button class="save" onclick="saveSettings()">Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scouting Report Modal -->
+<div class="modal" id="scoutingModal">
+    <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+        <h3 style="display: flex; justify-content: space-between; align-items: center;">
+            <span>📋 Quick Scouting Report</span>
+            <button onclick="closeScoutingModal()" style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #a0aec0;">&times;</button>
+        </h3>
+        
+        <div id="scoutingContent">
+            <p style="color: #718096; text-align: center; padding: 20px;">Loading scouting data...</p>
+        </div>
+        
+        <div style="margin-top: 16px;">
+            <a href="opponents.html" style="display: block; text-align: center; color: var(--primary); font-weight: 600; text-decoration: none; padding: 12px; background: #ebf4ff; border-radius: 8px;">
+                🔍 Manage Opponent Database
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Save to Profile Modal -->
+<div class="modal" id="saveProfileModal">
+    <div class="modal-content">
+        <h3>💾 Save to Opponent Profile?</h3>
+        <p id="saveProfilePrompt" style="margin: 16px 0; color: #4a5568;"></p>
+        
+        <div id="saveProfileDetails" style="background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9em;"></div>
+        
+        <div class="modal-buttons">
+            <button class="cancel" onclick="closeSaveProfileModal()">Skip</button>
+            <button class="save" onclick="confirmSaveToProfile()">Save to Profile</button>
         </div>
     </div>
 </div>
@@ -1406,12 +1446,7 @@ document.getElementById('undoBtn').addEventListener('click', () => {
     }
 });
 
-document.getElementById('nextBatterBtn').addEventListener('click', () => {
-    resetCount();
-    clearPitchSelection();
-    hideInplayPanel();
-    updateDisplay();
-});
+document.getElementById('nextBatterBtn').addEventListener('click', originalNextBatter);
 
 document.getElementById('newInningBtn').addEventListener('click', () => {
     state.outs = 0;
@@ -1931,6 +1966,353 @@ function startNewGame() {
     }
 }
 
+// ========== OPPONENT SCOUTING INTEGRATION ==========
+
+// Get opponent data from localStorage
+function getOpponents() {
+    const data = localStorage.getItem(getStorageKey('opponents'));
+    return data ? JSON.parse(data) : {};
+}
+
+function saveOpponents(opponents) {
+    localStorage.setItem(getStorageKey('opponents'), JSON.stringify(opponents));
+}
+
+// Find opponent team by name
+function findOpponentTeam(teamName) {
+    if (!teamName) return null;
+    const opponents = getOpponents();
+    
+    // Try exact match first
+    for (const [id, team] of Object.entries(opponents)) {
+        if (team.name.toLowerCase() === teamName.toLowerCase()) {
+            return { id, team };
+        }
+    }
+    
+    // Try partial match
+    for (const [id, team] of Object.entries(opponents)) {
+        if (team.name.toLowerCase().includes(teamName.toLowerCase()) || 
+            teamName.toLowerCase().includes(team.name.toLowerCase())) {
+            return { id, team };
+        }
+    }
+    
+    return null;
+}
+
+// Find player in opponent team
+function findOpponentPlayer(teamId, playerName) {
+    if (!teamId || !playerName) return null;
+    const opponents = getOpponents();
+    const team = opponents[teamId];
+    if (!team || !team.players) return null;
+    
+    const normalizedName = playerName.replace(/^#?\d+\s*/, '').trim().toLowerCase();
+    
+    for (const [playerId, player] of Object.entries(team.players)) {
+        if (player.name.toLowerCase() === normalizedName) {
+            return { playerId, player };
+        }
+        // Also check with number prefix
+        const playerFullName = `#${player.number} ${player.name}`.toLowerCase();
+        if (playerFullName.includes(normalizedName) || normalizedName.includes(player.name.toLowerCase())) {
+            return { playerId, player };
+        }
+    }
+    
+    return null;
+}
+
+// Check if scouting data is available for the current batting team
+function checkScoutingAvailability() {
+    const battingTeam = document.getElementById('battingTeam').value;
+    const scoutingRow = document.getElementById('scoutingBtnRow');
+    
+    if (battingTeam) {
+        const opponent = findOpponentTeam(battingTeam);
+        if (opponent && Object.keys(opponent.team.players || {}).length > 0) {
+            scoutingRow.style.display = 'block';
+            return;
+        }
+    }
+    
+    scoutingRow.style.display = 'none';
+}
+
+// Show scouting modal with current batter/pitcher info
+function showScoutingModal() {
+    const battingTeam = document.getElementById('battingTeam').value;
+    const currentBatter = document.getElementById('currentBatter').value;
+    const currentPitcher = document.getElementById('currentPitcher').value;
+    
+    const opponent = findOpponentTeam(battingTeam);
+    if (!opponent) {
+        document.getElementById('scoutingContent').innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #718096;">
+                <p style="font-size: 2em; margin-bottom: 12px;">🔍</p>
+                <p>No scouting data for "${battingTeam}"</p>
+                <p style="font-size: 0.85em; margin-top: 8px;">
+                    <a href="opponents.html" style="color: var(--primary);">Add this team to your database</a>
+                </p>
+            </div>
+        `;
+        document.getElementById('scoutingModal').classList.add('visible');
+        return;
+    }
+    
+    let html = '';
+    
+    // Current batter section
+    if (currentBatter) {
+        const batterInfo = findOpponentPlayer(opponent.id, currentBatter);
+        if (batterInfo) {
+            html += renderBatterScoutingCard(batterInfo.player, 'Current Batter');
+        } else {
+            html += `
+                <div style="background: #fef5e7; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                    <strong style="color: #975a16;">⚾ Current Batter: ${currentBatter}</strong>
+                    <p style="font-size: 0.85em; color: #975a16; margin-top: 4px;">Not in scouting database</p>
+                </div>
+            `;
+        }
+    }
+    
+    // Current pitcher section (from opponent team - if they're pitching)
+    // Note: In a real game, the batting team would be opponent, so we show batter info primarily
+    
+    // List all batters from opponent team
+    html += `<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">`;
+    html += `<h4 style="color: var(--primary); margin-bottom: 12px;">📋 ${opponent.team.name} - All Players</h4>`;
+    
+    const players = Object.entries(opponent.team.players || {});
+    if (players.length === 0) {
+        html += `<p style="color: #718096; font-size: 0.9em;">No players tracked yet</p>`;
+    } else {
+        const batters = players.filter(([id, p]) => p.type === 'batter' || p.type === 'both');
+        const pitchers = players.filter(([id, p]) => p.type === 'pitcher' || p.type === 'both');
+        
+        if (batters.length > 0) {
+            html += `<div style="font-weight: 600; margin-bottom: 8px; color: #4a5568;">⚾ Batters</div>`;
+            batters.forEach(([id, p]) => {
+                html += renderMiniPlayerCard(p);
+            });
+        }
+        
+        if (pitchers.length > 0) {
+            html += `<div style="font-weight: 600; margin: 12px 0 8px; color: #4a5568;">⚡ Pitchers</div>`;
+            pitchers.forEach(([id, p]) => {
+                html += renderMiniPitcherCard(p);
+            });
+        }
+    }
+    html += `</div>`;
+    
+    document.getElementById('scoutingContent').innerHTML = html;
+    document.getElementById('scoutingModal').classList.add('visible');
+}
+
+function renderBatterScoutingCard(player, label) {
+    let html = `
+        <div style="background: #ebf8ff; padding: 14px; border-radius: 10px; margin-bottom: 12px; border-left: 4px solid #3182ce;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <strong style="font-size: 1.1em; color: #2c5282;">⚾ ${label}</strong>
+                <span style="background: #3182ce; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 700;">#${player.number || '?'}</span>
+            </div>
+            <div style="font-size: 1.2em; font-weight: 700; color: #1a365d; margin-bottom: 8px;">${player.name}</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                <span style="background: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 500;">Bats ${player.bats || 'R'}</span>
+                ${player.pullTendency ? `<span style="background: #fef5e7; padding: 3px 8px; border-radius: 4px; font-size: 0.8em;">${player.pullTendency} pull</span>` : ''}
+                ${player.ballFlight ? `<span style="background: #fef5e7; padding: 3px 8px; border-radius: 4px; font-size: 0.8em;">${player.ballFlight} ball</span>` : ''}
+            </div>
+    `;
+    
+    if (player.weaknesses) {
+        html += `
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 0.75em; font-weight: 600; color: #c53030; margin-bottom: 4px;">⚠️ WEAKNESSES</div>
+                <div style="font-size: 0.9em; color: #c53030; background: #fff5f5; padding: 8px; border-radius: 6px;">${player.weaknesses}</div>
+            </div>
+        `;
+    }
+    
+    if (player.strengths) {
+        html += `
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 0.75em; font-weight: 600; color: #276749; margin-bottom: 4px;">💪 STRENGTHS</div>
+                <div style="font-size: 0.9em; color: #276749; background: #f0fff4; padding: 8px; border-radius: 6px;">${player.strengths}</div>
+            </div>
+        `;
+    }
+    
+    if (player.notes) {
+        html += `<div style="font-size: 0.85em; color: #4a5568; font-style: italic; margin-top: 8px;">"${player.notes}"</div>`;
+    }
+    
+    html += `</div>`;
+    return html;
+}
+
+function renderMiniPlayerCard(player) {
+    const weak = player.weaknesses ? player.weaknesses.substring(0, 40) + (player.weaknesses.length > 40 ? '...' : '') : '';
+    return `
+        <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="font-size: 0.9em;">#${player.number || '?'} ${player.name}</strong>
+                <div style="font-size: 0.75em; color: #718096;">${player.bats || 'R'} | ${player.pullTendency || '-'} | ${player.ballFlight || '-'}</div>
+                ${weak ? `<div style="font-size: 0.75em; color: #c53030; margin-top: 2px;">⚠️ ${weak}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function renderMiniPitcherCard(player) {
+    const pitches = (player.pitches || []).join('/');
+    const howToBeat = player.pitcherWeaknesses ? player.pitcherWeaknesses.substring(0, 40) + (player.pitcherWeaknesses.length > 40 ? '...' : '') : '';
+    return `
+        <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 0.9em;">#${player.number || '?'} ${player.name}</strong>
+                <span style="font-size: 0.75em; color: #718096;">${player.throws || 'R'}HP | ${pitches}</span>
+            </div>
+            ${player.fbVelocity ? `<div style="font-size: 0.75em; color: #4a5568; margin-top: 2px;">FB: ${player.fbVelocity}</div>` : ''}
+            ${howToBeat ? `<div style="font-size: 0.75em; color: #38a169; margin-top: 2px;">🎯 ${howToBeat}</div>` : ''}
+        </div>
+    `;
+}
+
+function closeScoutingModal() {
+    document.getElementById('scoutingModal').classList.remove('visible');
+}
+
+// Auto-capture: Save at-bat results to opponent profile
+let pendingAtBatSave = null;
+
+function promptSaveToProfile(batter, results) {
+    const battingTeam = document.getElementById('battingTeam').value;
+    const opponent = findOpponentTeam(battingTeam);
+    
+    if (!opponent) return; // No opponent team in database
+    
+    const batterInfo = findOpponentPlayer(opponent.id, batter);
+    if (!batterInfo) return; // Batter not in database
+    
+    pendingAtBatSave = {
+        teamId: opponent.id,
+        playerId: batterInfo.playerId,
+        player: batterInfo.player,
+        date: new Date().toISOString().split('T')[0],
+        results: results.map(r => formatResult(r))
+    };
+    
+    document.getElementById('saveProfilePrompt').innerHTML = `
+        Save this at-bat to <strong>${batterInfo.player.name}</strong>'s profile?
+    `;
+    
+    document.getElementById('saveProfileDetails').innerHTML = `
+        <div style="margin-bottom: 8px;"><strong>Results:</strong> ${pendingAtBatSave.results.join(', ')}</div>
+        <div style="font-size: 0.85em; color: #718096;">This data will be added to their history for future scouting.</div>
+    `;
+    
+    document.getElementById('saveProfileModal').classList.add('visible');
+}
+
+function formatResult(result) {
+    const map = {
+        'strikeout_looking': 'K',
+        'strikeout_swinging': 'K',
+        'walk': 'BB',
+        'single': '1B',
+        'extra_base_hit': 'XBH',
+        'out': 'OUT',
+        'error': 'E',
+        'ball': 'Ball',
+        'called_strike': 'CS',
+        'swinging_strike': 'SS',
+        'foul': 'F'
+    };
+    return map[result] || result.toUpperCase();
+}
+
+function confirmSaveToProfile() {
+    if (!pendingAtBatSave) return;
+    
+    const opponents = getOpponents();
+    const team = opponents[pendingAtBatSave.teamId];
+    if (!team || !team.players[pendingAtBatSave.playerId]) {
+        closeSaveProfileModal();
+        return;
+    }
+    
+    const player = team.players[pendingAtBatSave.playerId];
+    if (!player.history) player.history = [];
+    
+    // Check if we already have an entry for today
+    const todayIndex = player.history.findIndex(h => h.date === pendingAtBatSave.date);
+    if (todayIndex >= 0) {
+        // Append to existing entry
+        player.history[todayIndex].results.push(...pendingAtBatSave.results);
+    } else {
+        // Add new entry
+        player.history.unshift({
+            date: pendingAtBatSave.date,
+            results: pendingAtBatSave.results,
+            pitchesSeen: state.pitches.filter(p => p.batter === document.getElementById('currentBatter').value).length
+        });
+    }
+    
+    // Keep only last 20 history entries
+    player.history = player.history.slice(0, 20);
+    
+    saveOpponents(opponents);
+    closeSaveProfileModal();
+    
+    // Brief confirmation
+    const btn = document.getElementById('scoutingReportBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '✓ Saved to profile!';
+    btn.style.background = 'var(--success)';
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+    }, 2000);
+}
+
+function closeSaveProfileModal() {
+    document.getElementById('saveProfileModal').classList.remove('visible');
+    pendingAtBatSave = null;
+}
+
+// Override nextBatter to prompt for profile save
+const originalNextBatter = function() {
+    // Get the at-bat results before resetting
+    const currentBatter = document.getElementById('currentBatter').value;
+    if (currentBatter) {
+        const atBatPitches = state.pitches.filter(p => p.batter === currentBatter);
+        const lastFewPitches = atBatPitches.slice(-10); // Get last 10 pitches of this AB
+        
+        // Find at-bat ending result
+        const endingResults = ['strikeout_looking', 'strikeout_swinging', 'walk', 'single', 'extra_base_hit', 'out', 'error'];
+        const atBatResults = lastFewPitches.filter(p => endingResults.includes(p.result)).map(p => p.result);
+        
+        if (atBatResults.length > 0) {
+            // Prompt to save after a short delay so UI updates first
+            setTimeout(() => promptSaveToProfile(currentBatter, atBatResults), 100);
+        }
+    }
+    
+    resetCount();
+    clearPitchSelection();
+    hideInplayPanel();
+    updateDisplay();
+};
+
+// Add event listener for batting team change
+document.getElementById('battingTeam').addEventListener('change', function() {
+    updatePlayerDropdowns();
+    checkScoutingAvailability();
+});
+
 // Button Event Listeners
 document.getElementById('settingsBtn').addEventListener('click', showSettingsModal);
 document.getElementById('endGameBtn').addEventListener('click', showEndGameModal);
@@ -1942,6 +2324,7 @@ document.getElementById('bullpenBtn').addEventListener('click', () => {
 loadTeams();
 loadSettings();
 updateDisplay();
+checkScoutingAvailability();
 document.getElementById('syncStatus').textContent = useLocalStorage ? 'Local Mode' : 'Connecting...';
 document.getElementById('syncStatus').className = 'sync-status connected';
 

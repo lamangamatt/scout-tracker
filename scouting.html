@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Tracker - Scouting Report</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+            --purple: #805ad5;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 1.1em; display: flex; align-items: center; gap: 8px; }
+        .header-btns { display: flex; gap: 8px; }
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        .header-btn:active { transform: scale(0.95); }
+        
+        .container {
+            padding: 12px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Team Selection Modal */
+        .team-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .team-modal.hidden { display: none; }
+        .team-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+        }
+        .team-modal-content h2 { font-size: 1.5em; margin-bottom: 8px; color: var(--primary); }
+        .team-modal-content p { color: #718096; margin-bottom: 20px; font-size: 0.9em; }
+        .team-modal-content input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .team-modal-content input:focus { outline: none; border-color: var(--primary); }
+        .team-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Team Selector */
+        .team-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .team-selector label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+        .team-selector select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+        }
+        .team-selector select:focus { outline: none; border-color: var(--primary); }
+        
+        /* Report Container */
+        .report-container {
+            display: none;
+        }
+        .report-container.visible { display: block; }
+        
+        /* Report Header */
+        .report-header {
+            background: linear-gradient(135deg, var(--primary), #2c5282);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .report-header h2 { font-size: 1.5em; margin-bottom: 8px; }
+        .report-header .subtitle { opacity: 0.85; font-size: 0.9em; }
+        .report-header .record {
+            margin-top: 12px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+        .report-header .record .vs { opacity: 0.7; font-size: 0.8em; }
+        .report-header .last-played {
+            margin-top: 8px;
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+        
+        /* Section */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .section-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Player Scouting Card */
+        .scouting-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .scouting-card:last-child { margin-bottom: 0; }
+        
+        .scouting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .scouting-name {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .scouting-number {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 700;
+        }
+        
+        .scouting-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .scouting-tag {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .scouting-tag.bats { background: #ebf8ff; color: #2b6cb0; }
+        .scouting-tag.throws { background: #faf5ff; color: var(--purple); }
+        .scouting-tag.tendency { background: #fefcbf; color: #975a16; }
+        .scouting-tag.pitch { background: #e2e8f0; color: var(--dark); }
+        
+        .scouting-notes {
+            margin-top: 10px;
+        }
+        .notes-section {
+            margin-bottom: 8px;
+        }
+        .notes-label {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .notes-content {
+            font-size: 0.9em;
+            color: var(--dark);
+            line-height: 1.4;
+        }
+        .notes-content.weakness { color: var(--accent); }
+        .notes-content.strength { color: var(--success); }
+        
+        .approach-box {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            border-left: 3px solid var(--success);
+        }
+        .approach-box .label {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: var(--success);
+            margin-bottom: 4px;
+        }
+        .approach-box .content {
+            font-size: 0.9em;
+            color: var(--dark);
+        }
+        
+        /* Count Tendencies */
+        .count-tendencies {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .count-item {
+            background: white;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.85em;
+        }
+        .count-item .label {
+            font-size: 0.7em;
+            color: #718096;
+            font-weight: 600;
+        }
+        .count-item .value {
+            color: var(--dark);
+            margin-top: 2px;
+        }
+        
+        /* History Summary */
+        .history-summary {
+            background: #edf2f7;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .history-summary .label {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 6px;
+        }
+        .history-summary .results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .result-badge {
+            font-size: 0.75em;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .result-badge.out { background: #fed7d7; color: #c53030; }
+        .result-badge.hit { background: #c6f6d5; color: #276749; }
+        .result-badge.k { background: #e2e8f0; color: #4a5568; }
+        .result-badge.walk { background: #bee3f8; color: #2b6cb0; }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0aec0;
+        }
+        .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+        
+        /* Print Button */
+        .print-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .print-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .print-btn.primary { background: var(--primary); color: white; }
+        .print-btn.secondary { background: #e2e8f0; color: var(--dark); }
+        
+        /* Print Styles */
+        @media print {
+            .header, .team-selector, .print-section, .header-btns { display: none !important; }
+            body { background: white; }
+            .container { max-width: 100%; padding: 0; }
+            .section { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; }
+            .scouting-card { break-inside: avoid; }
+            .report-header { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+        
+        /* Tabs for batters/pitchers */
+        .player-tabs {
+            display: flex;
+            margin-bottom: 12px;
+            background: #edf2f7;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .player-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .player-tab.active { background: white; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        /* Quick Access Modal (for in-game use) */
+        .quick-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .quick-modal.visible { display: flex; }
+        .quick-modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .quick-modal-header {
+            background: var(--primary);
+            color: white;
+            padding: 16px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .quick-modal-header h3 { font-size: 1.1em; }
+        .quick-modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        .quick-modal-body { padding: 16px; }
+    </style>
+</head>
+<body>
+
+<!-- Team Selection Modal -->
+<div id="teamSelectModal" class="team-modal">
+    <div class="team-modal-content">
+        <h2>📋 Scouting Report</h2>
+        <p>Enter your team code to access scouting data</p>
+        <input type="text" id="teamCodeInput" placeholder="e.g., bingham2026" autocapitalize="none" autocorrect="off">
+        <button onclick="setTeamCode()" class="team-submit-btn">Continue</button>
+    </div>
+</div>
+
+<header class="header">
+    <h1><span>📋</span> Scouting Report</h1>
+    <div class="header-btns">
+        <button class="header-btn" onclick="location.href='opponents.html'">🔍 Database</button>
+        <button class="header-btn" onclick="location.href='index.html'">🏠</button>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Team Selector -->
+    <div class="team-selector">
+        <label>Select Opponent Team</label>
+        <select id="opponentSelect" onchange="loadScoutingReport()">
+            <option value="">Choose a team...</option>
+        </select>
+    </div>
+    
+    <!-- No Teams State -->
+    <div id="noTeamsState" class="section" style="display: none;">
+        <div class="empty-state">
+            <div class="icon">🔍</div>
+            <p>No opponent teams in your database</p>
+            <p style="font-size: 0.85em; margin-top: 8px;">
+                <a href="opponents.html" style="color: var(--primary); font-weight: 600;">Add opponent teams</a> to create scouting reports
+            </p>
+        </div>
+    </div>
+    
+    <!-- Report Container -->
+    <div id="reportContainer" class="report-container">
+        <!-- Report Header -->
+        <div class="report-header">
+            <h2 id="reportTeamName">Team Name</h2>
+            <div class="subtitle">Pre-Game Scouting Report</div>
+            <div class="record">
+                <span class="vs">vs</span> <span id="reportRecord">0-0</span>
+            </div>
+            <div class="last-played" id="reportLastPlayed">Last played: Never</div>
+        </div>
+        
+        <!-- Team Notes -->
+        <div class="section" id="teamNotesSection" style="display: none;">
+            <div class="section-title">📝 Team Notes</div>
+            <p id="teamNotesContent" style="font-size: 0.95em; color: var(--dark); line-height: 1.5;"></p>
+        </div>
+        
+        <!-- Player Tabs -->
+        <div class="player-tabs">
+            <button class="player-tab active" data-tab="batters" onclick="switchPlayerTab('batters')">⚾ Batters</button>
+            <button class="player-tab" data-tab="pitchers" onclick="switchPlayerTab('pitchers')">⚡ Pitchers</button>
+        </div>
+        
+        <!-- Batters Section -->
+        <div id="battersSection" class="section">
+            <div class="section-title">⚾ Their Hitters</div>
+            <div id="battersList">
+                <div class="empty-state">
+                    <p>No batters tracked for this team</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pitchers Section -->
+        <div id="pitchersSection" class="section" style="display: none;">
+            <div class="section-title">⚡ Their Pitchers</div>
+            <div id="pitchersList">
+                <div class="empty-state">
+                    <p>No pitchers tracked for this team</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Print/Share Section -->
+        <div class="print-section">
+            <button class="print-btn primary" onclick="window.print()">🖨️ Print Report</button>
+            <button class="print-btn secondary" onclick="shareReport()">📤 Share</button>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Access Modal -->
+<div class="quick-modal" id="quickModal">
+    <div class="quick-modal-content">
+        <div class="quick-modal-header">
+            <h3 id="quickModalTitle">Player Scouting</h3>
+            <button class="quick-modal-close" onclick="closeQuickModal()">&times;</button>
+        </div>
+        <div class="quick-modal-body" id="quickModalBody">
+        </div>
+    </div>
+</div>
+
+<script>
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+let currentReport = null;
+
+function checkTeamCode() {
+    if (!currentTeamCode) {
+        document.getElementById('teamSelectModal').classList.remove('hidden');
+    } else {
+        document.getElementById('teamSelectModal').classList.add('hidden');
+        loadOpponentTeams();
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamSelectModal').classList.add('hidden');
+    loadOpponentTeams();
+}
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+// Load opponent teams into dropdown
+function loadOpponentTeams() {
+    const opponents = getOpponents();
+    const select = document.getElementById('opponentSelect');
+    const teams = Object.entries(opponents);
+    
+    if (teams.length === 0) {
+        document.getElementById('noTeamsState').style.display = 'block';
+        return;
+    }
+    
+    document.getElementById('noTeamsState').style.display = 'none';
+    
+    select.innerHTML = '<option value="">Choose a team...</option>' +
+        teams.map(([id, team]) => `<option value="${id}">${team.name}</option>`).join('');
+    
+    // Check if there's a pre-selected team from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedTeam = urlParams.get('team');
+    if (preselectedTeam && opponents[preselectedTeam]) {
+        select.value = preselectedTeam;
+        loadScoutingReport();
+    }
+}
+
+function getOpponents() {
+    const data = localStorage.getItem(getStorageKey('opponents'));
+    return data ? JSON.parse(data) : {};
+}
+
+// Load and render scouting report
+function loadScoutingReport() {
+    const teamId = document.getElementById('opponentSelect').value;
+    const container = document.getElementById('reportContainer');
+    
+    if (!teamId) {
+        container.classList.remove('visible');
+        return;
+    }
+    
+    const opponents = getOpponents();
+    const team = opponents[teamId];
+    
+    if (!team) {
+        container.classList.remove('visible');
+        return;
+    }
+    
+    currentReport = { teamId, team };
+    
+    // Update header
+    document.getElementById('reportTeamName').textContent = team.name;
+    const record = team.record || { wins: 0, losses: 0 };
+    document.getElementById('reportRecord').textContent = `${record.wins}-${record.losses}`;
+    document.getElementById('reportLastPlayed').textContent = 
+        team.lastPlayed ? `Last played: ${formatDate(team.lastPlayed)}` : 'Never played before';
+    
+    // Team notes
+    const notesSection = document.getElementById('teamNotesSection');
+    if (team.notes && team.notes.trim()) {
+        notesSection.style.display = 'block';
+        document.getElementById('teamNotesContent').textContent = team.notes;
+    } else {
+        notesSection.style.display = 'none';
+    }
+    
+    // Categorize players
+    const players = Object.entries(team.players || {});
+    const batters = players.filter(([id, p]) => p.type === 'batter' || p.type === 'both');
+    const pitchers = players.filter(([id, p]) => p.type === 'pitcher' || p.type === 'both');
+    
+    // Render batters
+    renderBatters(batters);
+    
+    // Render pitchers
+    renderPitchers(pitchers);
+    
+    container.classList.add('visible');
+}
+
+function renderBatters(batters) {
+    const container = document.getElementById('battersList');
+    
+    if (batters.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="padding: 20px;">
+                <p>No batters tracked for this team</p>
+                <p style="font-size: 0.85em; margin-top: 8px;">
+                    <a href="opponents.html?team=${currentReport?.teamId}" style="color: var(--primary);">Add players</a>
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = batters.map(([id, player]) => renderBatterCard(player)).join('');
+}
+
+function renderBatterCard(player) {
+    const tags = [];
+    tags.push(`<span class="scouting-tag bats">Bats ${player.bats || 'R'}</span>`);
+    if (player.pullTendency && player.pullTendency !== 'moderate') {
+        tags.push(`<span class="scouting-tag tendency">${player.pullTendency} pull</span>`);
+    }
+    if (player.ballFlight) {
+        tags.push(`<span class="scouting-tag tendency">${player.ballFlight} ball hitter</span>`);
+    }
+    
+    let notesHtml = '';
+    
+    if (player.weaknesses) {
+        notesHtml += `
+            <div class="notes-section">
+                <div class="notes-label">⚠️ Weaknesses</div>
+                <div class="notes-content weakness">${player.weaknesses}</div>
+            </div>
+        `;
+    }
+    
+    if (player.strengths) {
+        notesHtml += `
+            <div class="notes-section">
+                <div class="notes-label">💪 Strengths</div>
+                <div class="notes-content strength">${player.strengths}</div>
+            </div>
+        `;
+    }
+    
+    // Suggested approach
+    let approach = '';
+    if (player.weaknesses) {
+        approach = generateBatterApproach(player);
+    }
+    
+    // History
+    let historyHtml = '';
+    if (player.history && player.history.length > 0) {
+        const allResults = player.history.flatMap(h => h.results);
+        historyHtml = `
+            <div class="history-summary">
+                <div class="label">📊 Results vs Us (${allResults.length} ABs)</div>
+                <div class="results">
+                    ${allResults.map(r => `<span class="result-badge ${getResultClass(r)}">${r}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="scouting-card">
+            <div class="scouting-header">
+                <span class="scouting-name">${player.name}</span>
+                <span class="scouting-number">#${player.number || '?'}</span>
+            </div>
+            <div class="scouting-tags">${tags.join('')}</div>
+            <div class="scouting-notes">
+                ${notesHtml}
+                ${approach ? `
+                    <div class="approach-box">
+                        <div class="label">🎯 HOW TO PITCH HIM</div>
+                        <div class="content">${approach}</div>
+                    </div>
+                ` : ''}
+                ${historyHtml}
+            </div>
+            ${player.notes ? `<div style="margin-top: 10px; font-size: 0.85em; color: #718096; font-style: italic;">"${player.notes}"</div>` : ''}
+        </div>
+    `;
+}
+
+function generateBatterApproach(player) {
+    const suggestions = [];
+    
+    // Based on weaknesses
+    if (player.weaknesses) {
+        const w = player.weaknesses.toLowerCase();
+        if (w.includes('high') && w.includes('fast')) {
+            suggestions.push('Elevate the fastball');
+        }
+        if (w.includes('chase') || w.includes('breaking')) {
+            suggestions.push('Expand the zone with off-speed');
+        }
+        if (w.includes('inside') || w.includes('in tight')) {
+            suggestions.push('Work inside');
+        }
+        if (w.includes('patient')) {
+            suggestions.push('Attack early in counts');
+        }
+    }
+    
+    // Based on tendencies
+    if (player.pullTendency === 'heavy') {
+        suggestions.push('Pitch him away');
+    }
+    if (player.ballFlight === 'fly') {
+        suggestions.push('Keep it down in the zone');
+    }
+    if (player.ballFlight === 'ground') {
+        suggestions.push('Get ahead and work up');
+    }
+    
+    return suggestions.length > 0 ? suggestions.join('. ') + '.' : '';
+}
+
+function renderPitchers(pitchers) {
+    const container = document.getElementById('pitchersList');
+    
+    if (pitchers.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="padding: 20px;">
+                <p>No pitchers tracked for this team</p>
+                <p style="font-size: 0.85em; margin-top: 8px;">
+                    <a href="opponents.html?team=${currentReport?.teamId}" style="color: var(--primary);">Add players</a>
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = pitchers.map(([id, player]) => renderPitcherCard(player)).join('');
+}
+
+function renderPitcherCard(player) {
+    const tags = [];
+    tags.push(`<span class="scouting-tag throws">Throws ${player.throws || 'R'}</span>`);
+    if (player.pitches && player.pitches.length > 0) {
+        player.pitches.forEach(p => {
+            tags.push(`<span class="scouting-tag pitch">${p}</span>`);
+        });
+    }
+    if (player.fbVelocity) {
+        tags.push(`<span class="scouting-tag pitch">FB: ${player.fbVelocity}</span>`);
+    }
+    
+    let tendenciesHtml = '';
+    const hasTendencies = player.firstPitchTendency || player.aheadApproach || player.behindApproach || player.twoStrikeApproach;
+    
+    if (hasTendencies) {
+        tendenciesHtml = `
+            <div class="count-tendencies">
+                ${player.firstPitchTendency ? `<div class="count-item"><div class="label">First Pitch</div><div class="value">${player.firstPitchTendency}</div></div>` : ''}
+                ${player.aheadApproach ? `<div class="count-item"><div class="label">Ahead (0-2, 1-2)</div><div class="value">${player.aheadApproach}</div></div>` : ''}
+                ${player.behindApproach ? `<div class="count-item"><div class="label">Behind (2-0, 3-1)</div><div class="value">${player.behindApproach}</div></div>` : ''}
+                ${player.twoStrikeApproach ? `<div class="count-item"><div class="label">Two Strikes</div><div class="value">${player.twoStrikeApproach}</div></div>` : ''}
+            </div>
+        `;
+    }
+    
+    let approachHtml = '';
+    if (player.pitcherWeaknesses) {
+        approachHtml = `
+            <div class="approach-box" style="border-left-color: var(--accent);">
+                <div class="label" style="color: var(--accent);">🎯 HOW TO BEAT HIM</div>
+                <div class="content">${player.pitcherWeaknesses}</div>
+            </div>
+        `;
+    }
+    
+    let fatigueHtml = '';
+    if (player.fatigueNotes) {
+        fatigueHtml = `
+            <div class="notes-section" style="margin-top: 10px;">
+                <div class="notes-label">⚠️ Fatigue Indicators</div>
+                <div class="notes-content">${player.fatigueNotes}</div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="scouting-card">
+            <div class="scouting-header">
+                <span class="scouting-name">${player.name}</span>
+                <span class="scouting-number">#${player.number || '?'}</span>
+            </div>
+            <div class="scouting-tags">${tags.join('')}</div>
+            <div class="scouting-notes">
+                ${tendenciesHtml}
+                ${approachHtml}
+                ${fatigueHtml}
+            </div>
+            ${player.notes ? `<div style="margin-top: 10px; font-size: 0.85em; color: #718096; font-style: italic;">"${player.notes}"</div>` : ''}
+        </div>
+    `;
+}
+
+// Tab switching
+function switchPlayerTab(tab) {
+    document.querySelectorAll('.player-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    
+    document.getElementById('battersSection').style.display = tab === 'batters' ? 'block' : 'none';
+    document.getElementById('pitchersSection').style.display = tab === 'pitchers' ? 'block' : 'none';
+}
+
+// Quick modal for in-game access
+function showQuickReport(playerId) {
+    if (!currentReport) return;
+    
+    const player = currentReport.team.players?.[playerId];
+    if (!player) return;
+    
+    document.getElementById('quickModalTitle').textContent = `#${player.number} ${player.name}`;
+    
+    let bodyHtml = '';
+    if (player.type === 'batter' || player.type === 'both') {
+        bodyHtml += renderBatterCard(player);
+    }
+    if (player.type === 'pitcher' || player.type === 'both') {
+        bodyHtml += renderPitcherCard(player);
+    }
+    
+    document.getElementById('quickModalBody').innerHTML = bodyHtml;
+    document.getElementById('quickModal').classList.add('visible');
+}
+
+function closeQuickModal() {
+    document.getElementById('quickModal').classList.remove('visible');
+}
+
+// Share report
+function shareReport() {
+    if (!currentReport) return;
+    
+    const team = currentReport.team;
+    let reportText = `📋 SCOUTING REPORT: ${team.name}\n`;
+    reportText += `Record vs them: ${team.record?.wins || 0}-${team.record?.losses || 0}\n\n`;
+    
+    const players = Object.values(team.players || {});
+    const batters = players.filter(p => p.type === 'batter' || p.type === 'both');
+    const pitchers = players.filter(p => p.type === 'pitcher' || p.type === 'both');
+    
+    if (batters.length > 0) {
+        reportText += '⚾ BATTERS:\n';
+        batters.forEach(p => {
+            reportText += `#${p.number} ${p.name} (${p.bats || 'R'})\n`;
+            if (p.weaknesses) reportText += `  ⚠️ ${p.weaknesses}\n`;
+        });
+        reportText += '\n';
+    }
+    
+    if (pitchers.length > 0) {
+        reportText += '⚡ PITCHERS:\n';
+        pitchers.forEach(p => {
+            reportText += `#${p.number} ${p.name} (${p.throws || 'R'}) - ${(p.pitches || []).join('/')}\n`;
+            if (p.pitcherWeaknesses) reportText += `  🎯 ${p.pitcherWeaknesses}\n`;
+        });
+    }
+    
+    if (navigator.share) {
+        navigator.share({
+            title: `Scouting: ${team.name}`,
+            text: reportText
+        }).catch(console.error);
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(reportText).then(() => {
+            alert('Report copied to clipboard!');
+        }).catch(() => {
+            alert('Could not share. Try printing instead.');
+        });
+    }
+}
+
+// Utility
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getResultClass(result) {
+    const r = result.toLowerCase();
+    if (r === 'k' || r === 'so' || r.includes('strikeout')) return 'k';
+    if (r === 'bb' || r.includes('walk')) return 'walk';
+    if (r === '1b' || r === '2b' || r === '3b' || r === 'hr' || r.includes('single') || r.includes('double') || r.includes('triple') || r.includes('home')) return 'hit';
+    return 'out';
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', checkTeamCode);
+
+// Close modal on background click
+document.getElementById('quickModal').addEventListener('click', function(e) {
+    if (e.target === this) closeQuickModal();
+});
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW failed:', err));
+    });
+}
+</script>
+
+</body>
+</html>

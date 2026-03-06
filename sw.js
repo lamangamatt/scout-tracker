@@ -1,5 +1,5 @@
 // Scout Tracker Service Worker
-const CACHE_NAME = 'scout-tracker-v2';
+const CACHE_NAME = 'scout-tracker-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const ASSETS_TO_CACHE = [
   './coach.html',
   './bullpen.html',
   './history.html',
+  './opponents.html',
+  './scouting.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'

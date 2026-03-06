@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scout Tracker - Data Entry</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -1658,6 +1663,29 @@ loadSettings();
 updateDisplay();
 document.getElementById('syncStatus').textContent = useLocalStorage ? 'Local Mode' : 'Connecting...';
 document.getElementById('syncStatus').className = 'sync-status connected';
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('SW registered:', registration.scope);
+            })
+            .catch((err) => {
+                console.log('SW registration failed:', err);
+            });
+    });
+}
+
+// Offline indicator
+window.addEventListener('online', () => {
+    document.getElementById('syncStatus').textContent = useLocalStorage ? 'Local Mode' : '✓ Online';
+    document.getElementById('syncStatus').className = 'sync-status connected';
+});
+window.addEventListener('offline', () => {
+    document.getElementById('syncStatus').textContent = '⚠️ Offline';
+    document.getElementById('syncStatus').className = 'sync-status disconnected';
+});
 </script>
 
 </body>

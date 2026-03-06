@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#1a365d"/>
+  
+  <!-- Baseball -->
+  <circle cx="256" cy="256" r="140" fill="#f7fafc" stroke="#e53e3e" stroke-width="4"/>
+  
+  <!-- Baseball stitches - left side -->
+  <path d="M 160 180 Q 130 256, 160 332" fill="none" stroke="#e53e3e" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 145 195 L 165 205" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 135 220 L 158 227" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 130 250 L 155 252" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 135 280 L 158 278" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 145 310 L 165 302" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Baseball stitches - right side -->
+  <path d="M 352 180 Q 382 256, 352 332" fill="none" stroke="#e53e3e" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 367 195 L 347 205" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 377 220 L 354 227" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 382 250 L 357 252" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 377 280 L 354 278" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 367 310 L 347 302" fill="none" stroke="#e53e3e" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Tracker - Coach View</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
     <style>
         :root {
             --primary: #1a365d;
@@ -969,6 +974,29 @@ setInterval(pollForUpdates, 500);
 
 // Initial poll
 pollForUpdates();
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('SW registered:', registration.scope);
+            })
+            .catch((err) => {
+                console.log('SW registration failed:', err);
+            });
+    });
+}
+
+// Offline indicator
+window.addEventListener('online', () => {
+    document.getElementById('syncText').textContent = 'Connected';
+    document.getElementById('syncDot').style.background = '#38a169';
+});
+window.addEventListener('offline', () => {
+    document.getElementById('syncText').textContent = 'Offline';
+    document.getElementById('syncDot').style.background = '#d69e2e';
+});
 </script>
 
 </body>

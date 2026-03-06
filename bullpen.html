@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bullpen Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
     <style>
         :root {
             --primary: #1a365d;
@@ -1132,6 +1137,34 @@ function emailSessionReport(session) {
 }
 
 // Initialize - loadData() is called by checkTeamCode() after team is confirmed
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('SW registered:', registration.scope);
+            })
+            .catch((err) => {
+                console.log('SW registration failed:', err);
+            });
+    });
+}
+
+// Offline indicator - add banner if needed
+window.addEventListener('offline', () => {
+    if (!document.getElementById('offlineBanner')) {
+        const banner = document.createElement('div');
+        banner.id = 'offlineBanner';
+        banner.style.cssText = 'background: #d69e2e; color: white; padding: 10px; text-align: center; font-size: 0.9em;';
+        banner.textContent = '⚠️ You\'re offline - data is saved locally';
+        document.body.insertBefore(banner, document.body.firstChild);
+    }
+});
+window.addEventListener('online', () => {
+    const banner = document.getElementById('offlineBanner');
+    if (banner) banner.remove();
+});
 </script>
 </body>
 </html>

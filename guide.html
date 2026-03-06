@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Tracker - User Guide</title>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: #f7fafc;
+        }
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2em; margin-bottom: 8px; }
+        .header p { opacity: 0.9; }
+        .nav {
+            background: white;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 100;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav a {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 4px;
+            background: #edf2f7;
+            color: var(--primary);
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .nav a:hover { background: var(--primary); color: white; }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin: 24px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.6em;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--primary);
+        }
+        h3 {
+            color: #4a5568;
+            font-size: 1.2em;
+            margin: 24px 0 12px 0;
+        }
+        p { margin: 12px 0; }
+        ul, ol { margin: 12px 0 12px 24px; }
+        li { margin: 8px 0; }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin: 20px 0;
+        }
+        .tip {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        .warning {
+            background: #fffaf0;
+            border-left: 4px solid #dd6b20;
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .feature-card h4 {
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        code {
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .cta {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 8px 4px;
+        }
+        .cta:hover { background: #2c5282; }
+        .cta.secondary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        @media print {
+            .nav { display: none; }
+            section { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>⚾ Scout Tracker User Guide</h1>
+    <p>Complete guide to pitch tracking & scouting for youth baseball</p>
+</div>
+
+<nav class="nav">
+    <a href="#getting-started">Getting Started</a>
+    <a href="#data-entry">Data Entry</a>
+    <a href="#coach-view">Coach View</a>
+    <a href="#bullpen">Bullpen</a>
+    <a href="#history">History</a>
+    <a href="#opponents">Opponents</a>
+    <a href="#scouting">Scouting</a>
+    <a href="#stats">Stats</a>
+    <a href="#admin">Admin</a>
+</nav>
+
+<div class="container">
+
+    <section id="getting-started">
+        <h2>🚀 Getting Started</h2>
+        
+        <h3>What is Scout Tracker?</h3>
+        <p>Scout Tracker is a web-based pitch tracking app designed for youth baseball teams. It helps you:</p>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>📊 Track Pitches</h4>
+                <p>Log every pitch with type, location, and result in real-time during games</p>
+            </div>
+            <div class="feature-card">
+                <h4>⚠️ Protect Arms</h4>
+                <p>Monitor pitch counts with visual alerts when approaching limits</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔍 Scout Opponents</h4>
+                <p>Build a database of opponent tendencies for future matchups</p>
+            </div>
+            <div class="feature-card">
+                <h4>📈 Analyze Stats</h4>
+                <p>View team and individual statistics with visual charts</p>
+            </div>
+        </div>
+
+        <h3>Step 1: Open the App</h3>
+        <p>Go to: <a href="https://lamangamatt.github.io/scout-tracker/" target="_blank">lamangamatt.github.io/scout-tracker</a></p>
+        
+        <h3>Step 2: Enter Your Team Code</h3>
+        <p>Your team code is a unique identifier (like <code>bingham2026</code>) that keeps your team's data separate from others. All coaches on your team should use the same code.</p>
+        <img src="docs/images/01-landing-page.png" alt="Team code entry screen">
+        
+        <h3>Step 3: Add to Home Screen</h3>
+        <div class="tip">
+            <strong>📱 Pro Tip:</strong> Add Scout Tracker to your phone's home screen for instant access on game day!
+            <br><br>
+            <strong>iPhone:</strong> Tap Share → Add to Home Screen<br>
+            <strong>Android:</strong> Tap Menu → Add to Home Screen
+        </div>
+        
+        <p>Once set up, you'll see all available features:</p>
+        <img src="docs/images/02-landing-with-team.png" alt="Landing page with all options">
+    </section>
+
+    <section id="data-entry">
+        <h2>📝 Data Entry (Game Tracking)</h2>
+        
+        <p>This is where you'll spend most of your time during games. It's designed for quick, one-handed operation from the dugout.</p>
+        <img src="docs/images/03-entry-view.png" alt="Data entry screen">
+        
+        <h3>Recording a Pitch</h3>
+        <ol>
+            <li><strong>Select Pitch Type</strong> — FB, CB, SL, CH, CT, etc.</li>
+            <li><strong>Tap Location</strong> — Use the 9-zone grid (catcher's perspective)</li>
+            <li><strong>Select Result</strong> — Ball, Strike, Foul, or In Play result</li>
+        </ol>
+        
+        <h3>Pitch Count Alerts</h3>
+        <p>The colored bar at the top shows the current pitcher's count:</p>
+        <ul>
+            <li><strong style="color: #38a169;">Green ✅</strong> — Under warning threshold</li>
+            <li><strong style="color: #d69e2e;">Yellow ⚠️</strong> — Approaching limit (default: 70 pitches)</li>
+            <li><strong style="color: #e53e3e;">Red 🛑</strong> — At or over limit (default: 85 pitches)</li>
+        </ul>
+        <div class="warning">
+            <strong>⚾ Pitch Count Safety:</strong> Youth leagues have strict pitch count rules. Configure your limits in Admin → Settings to match your league's requirements.
+        </div>
+        
+        <h3>Managing Teams & Rosters</h3>
+        <p>Tap the ⚙️ button to add teams and players:</p>
+        <img src="docs/images/04-manage-teams-modal.png" alt="Team management">
+    </section>
+
+    <section id="coach-view">
+        <h2>📊 Coach View (Live Dashboard)</h2>
+        
+        <p>The Coach View shows real-time analytics during the game — perfect for a second device in the dugout or a parent helping track.</p>
+        <img src="docs/images/05-coach-view.png" alt="Coach dashboard">
+        
+        <h3>What You'll See</h3>
+        <ul>
+            <li><strong>Current Count</strong> — Balls, strikes, outs, inning</li>
+            <li><strong>Pitch Distribution</strong> — What pitches have been thrown</li>
+            <li><strong>Location Heatmap</strong> — Where pitches are landing</li>
+            <li><strong>Pitcher Stats</strong> — Live strike %, pitch count</li>
+        </ul>
+        
+        <div class="tip">
+            <strong>💡 Tip:</strong> Open Coach View on a tablet and keep it visible in the dugout. It updates automatically as pitches are logged.
+        </div>
+    </section>
+
+    <section id="bullpen">
+        <h2>🎯 Bullpen Tracker</h2>
+        
+        <p>Track bullpen sessions separately from games — great for practice and warm-ups.</p>
+        <img src="docs/images/06-bullpen-view.png" alt="Bullpen tracker">
+        
+        <ul>
+            <li>Log pitch types and locations during practice</li>
+            <li>Track velocity if available</li>
+            <li>Monitor cumulative pitch counts across sessions</li>
+            <li>Notes for each session</li>
+        </ul>
+    </section>
+
+    <section id="history">
+        <h2>📜 Game History</h2>
+        
+        <p>Review past games with full pitch-by-pitch details.</p>
+        <img src="docs/images/07-history-view.png" alt="Game history">
+        
+        <h3>For Each Game</h3>
+        <ul>
+            <li>Date, opponent, final pitch count</li>
+            <li>Expand to see inning-by-inning breakdown</li>
+            <li>Full pitch log with types, locations, results</li>
+            <li>Export to PDF for records</li>
+        </ul>
+    </section>
+
+    <section id="opponents">
+        <h2>🔍 Opponent Database</h2>
+        
+        <p>Build scouting profiles on teams you'll face again.</p>
+        <img src="docs/images/08-opponents-view.png" alt="Opponent tracking">
+        
+        <h3>Track Opponent Batters</h3>
+        <ul>
+            <li>Name, number, bats L/R/S</li>
+            <li>Pull/center/opposite tendency</li>
+            <li>Ground ball / fly ball tendency</li>
+            <li>Weaknesses and strengths (notes)</li>
+            <li>Historical results against your pitching</li>
+        </ul>
+        
+        <h3>Track Opponent Pitchers</h3>
+        <ul>
+            <li>Pitch repertoire (FB, CB, SL, CH, etc.)</li>
+            <li>Velocity ranges</li>
+            <li>Tendencies by count (first pitch, ahead, behind)</li>
+            <li>Fatigue indicators</li>
+        </ul>
+        
+        <div class="tip">
+            <strong>📈 Over Time:</strong> The more games you track, the better your scouting data becomes. Results are automatically saved to opponent profiles.
+        </div>
+    </section>
+
+    <section id="scouting">
+        <h2>📋 Pre-Game Scouting Reports</h2>
+        
+        <p>Before a game, pull up everything you know about the opponent.</p>
+        <img src="docs/images/09-scouting-view.png" alt="Scouting report">
+        
+        <h3>Report Includes</h3>
+        <ul>
+            <li>Their full roster with your notes</li>
+            <li>Batter tendencies and weaknesses</li>
+            <li>Pitcher tendencies and how to beat them</li>
+            <li>"Last time we faced them" summary</li>
+            <li>Auto-generated approach recommendations</li>
+        </ul>
+        
+        <p>
+            <a href="#" class="cta secondary" onclick="window.print()">🖨️ Print Report</a>
+            Great for posting in the dugout!
+        </p>
+    </section>
+
+    <section id="stats">
+        <h2>📈 Stats Dashboard</h2>
+        
+        <p>View team and individual statistics with visual charts.</p>
+        <img src="docs/images/10-stats-view.png" alt="Stats dashboard">
+        
+        <h3>Team Stats</h3>
+        <ul>
+            <li>Games played, record (W-L)</li>
+            <li>Team batting average</li>
+            <li>Team strike percentage</li>
+        </ul>
+        
+        <h3>Individual Batting</h3>
+        <ul>
+            <li>Games, at-bats, hits, average</li>
+            <li>Extra-base hits</li>
+            <li>Walk rate, strikeout rate</li>
+        </ul>
+        
+        <h3>Individual Pitching</h3>
+        <ul>
+            <li>Games, total pitches</li>
+            <li>Strike %, K/BB ratio</li>
+            <li>Pitches per inning</li>
+        </ul>
+        
+        <p>
+            <a href="#" class="cta secondary" onclick="window.print()">📄 Export PDF</a>
+        </p>
+    </section>
+
+    <section id="admin">
+        <h2>⚙️ Team Administration</h2>
+        
+        <p>Manage your team settings, roster, and data.</p>
+        <img src="docs/images/11-admin-view.png" alt="Admin panel">
+        
+        <h3>Team Settings</h3>
+        <ul>
+            <li>Team name, season, league</li>
+            <li>Pitch count limits (warning & max)</li>
+            <li>Sound alerts on/off</li>
+        </ul>
+        
+        <h3>Roster Management</h3>
+        <ul>
+            <li>Add/edit/remove players</li>
+            <li>Drag to reorder lineup</li>
+            <li>Import from CSV</li>
+            <li>Export to CSV</li>
+        </ul>
+        
+        <h3>Coach Management</h3>
+        <ul>
+            <li>Add coach emails</li>
+            <li>Assign roles (Head Coach, Assistant, Scorekeeper)</li>
+        </ul>
+        
+        <h3>Data Management</h3>
+        <ul>
+            <li>Backup all data to JSON file</li>
+            <li>Restore from backup</li>
+            <li>Clear specific data (games, opponents)</li>
+        </ul>
+        
+        <div class="warning">
+            <strong>⚠️ Danger Zone:</strong> The admin panel has options to delete data. Use with caution!
+        </div>
+    </section>
+
+    <section>
+        <h2>❓ Need Help?</h2>
+        <p>Having issues? Here are some quick fixes:</p>
+        <ul>
+            <li><strong>Data not syncing?</strong> Make sure all coaches are using the same team code</li>
+            <li><strong>App not loading?</strong> Check your internet connection, or use offline mode</li>
+            <li><strong>Lost your data?</strong> Check Admin → Data Management for backups</li>
+        </ul>
+        
+        <p style="margin-top: 24px;">
+            <a href="index.html" class="cta">🏠 Back to App</a>
+            <a href="#getting-started" class="cta secondary">⬆️ Back to Top</a>
+        </p>
+    </section>
+
+</div>
+
+</body>
+</html>

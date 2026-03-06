@@ -137,6 +137,111 @@
         .count-item.strikes .value { color: var(--strike); }
         .count-item.outs .value { color: var(--warning); }
         
+        /* Pitch Count Alert Styles */
+        .pitch-count-alert {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .pitch-count-alert.green {
+            background: linear-gradient(135deg, #38a169, #2f855a);
+            color: white;
+        }
+        
+        .pitch-count-alert.yellow {
+            background: linear-gradient(135deg, #d69e2e, #b7791f);
+            color: white;
+            animation: pulse-warning 1.5s infinite;
+        }
+        
+        .pitch-count-alert.red {
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            color: white;
+            animation: pulse-danger 0.8s infinite;
+        }
+        
+        @keyframes pulse-warning {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(214, 158, 46, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px 5px rgba(214, 158, 46, 0.3); }
+        }
+        
+        @keyframes pulse-danger {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4); }
+            50% { transform: scale(1.03); box-shadow: 0 0 25px 8px rgba(229, 62, 62, 0.4); }
+        }
+        
+        .pitch-count-alert .pitcher-name {
+            font-size: 0.8em;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        
+        .pitch-count-alert .count-numbers {
+            font-size: 1.4em;
+            font-weight: 800;
+        }
+        
+        .pitch-count-alert .alert-icon {
+            font-size: 1.2em;
+        }
+        
+        /* Alert Banner */
+        .pitch-alert-banner {
+            display: none;
+            position: fixed;
+            top: 50px;
+            left: 10px;
+            right: 10px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1em;
+            text-align: center;
+            z-index: 150;
+            animation: slideDown 0.3s ease-out, pulse-banner 1s infinite;
+        }
+        
+        .pitch-alert-banner.visible { display: block; }
+        
+        .pitch-alert-banner.warning {
+            background: linear-gradient(135deg, #d69e2e, #b7791f);
+            color: white;
+        }
+        
+        .pitch-alert-banner.danger {
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            color: white;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes pulse-banner {
+            0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+            50% { box-shadow: 0 4px 25px rgba(0,0,0,0.4); }
+        }
+        
+        .pitch-alert-banner .dismiss-btn {
+            margin-left: 12px;
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        
         /* Pitch Types */
         .pitch-types {
             display: grid;
@@ -508,6 +613,12 @@
 </head>
 <body>
 
+<!-- Pitch Alert Banner -->
+<div class="pitch-alert-banner" id="pitchAlertBanner">
+    <span id="alertBannerText">⚠️ Approaching pitch limit!</span>
+    <button class="dismiss-btn" onclick="dismissAlertBanner()">OK</button>
+</div>
+
 <!-- Team Selection Modal -->
 <div id="teamSelectModal" class="team-modal">
     <div class="team-modal-content">
@@ -548,6 +659,13 @@
                 <option value="">Select Pitcher...</option>
             </select>
         </div>
+    </div>
+
+    <!-- Pitcher Pitch Count Alert -->
+    <div class="pitch-count-alert green" id="pitchCountAlert">
+        <span class="alert-icon">✅</span>
+        <span class="pitcher-name" id="alertPitcherName">No pitcher selected</span>
+        <span class="count-numbers" id="alertPitchCount">0 / 85</span>
     </div>
 
     <!-- Count -->
@@ -722,6 +840,25 @@
     <div class="modal-content">
         <h3>⚙️ Settings</h3>
         
+        <div class="section-title">⚾ Pitch Count Limits</div>
+        <p style="font-size: 12px; color: #718096; margin-bottom: 8px;">Set pitch count thresholds for warnings (helps protect young arms!)</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+            <div>
+                <label style="font-size: 12px; color: #4a5568; display: block; margin-bottom: 4px;">Max Pitches (Red)</label>
+                <input type="number" id="maxPitchCount" value="85" min="20" max="150" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+            </div>
+            <div>
+                <label style="font-size: 12px; color: #4a5568; display: block; margin-bottom: 4px;">Warning At (Yellow)</label>
+                <input type="number" id="warningPitchCount" value="70" min="10" max="140" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+            </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <input type="checkbox" id="pitchAlertSound" style="width: 18px; height: 18px;">
+            <label for="pitchAlertSound" style="font-size: 13px; color: #4a5568;">🔔 Play sound when limit reached</label>
+        </div>
+        
         <div class="section-title">Coach Emails</div>
         <p style="font-size: 12px; color: #718096; margin-bottom: 8px;">Enter email addresses for game summary reports (one per line)</p>
         <textarea id="coachEmails" placeholder="headcoach@school.edu
@@ -749,6 +886,7 @@ pitchingcoach@school.edu" style="width: 100%; padding: 10px; border: 2px solid #
         <div class="modal-buttons" style="flex-direction: column; gap: 10px;">
             <button onclick="emailGameSummary()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #3182ce; color: white;">📧 Email Summary to Coaches</button>
             <button onclick="downloadGameData()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #38a169; color: white;">💾 Download CSV</button>
+            <button onclick="viewGameHistory()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #805ad5; color: white;">📜 View Game History</button>
             <button onclick="startNewGame()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #e53e3e; color: white;">🆕 Start New Game</button>
             <button class="cancel" onclick="closeEndGameModal()" style="width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #e2e8f0;">Cancel</button>
         </div>
@@ -1079,6 +1217,10 @@ function editTeam(name) {
 // Event Listeners for team selection
 document.getElementById('battingTeam').addEventListener('change', updatePlayerDropdowns);
 document.getElementById('pitchingTeam').addEventListener('change', updatePlayerDropdowns);
+document.getElementById('currentPitcher').addEventListener('change', () => {
+    lastAlertPitchCount = getCurrentPitcherPitchCount();
+    updatePitchCountAlert();
+});
 
 // Pitch Type Selection
 document.querySelectorAll('.pitch-btn').forEach(btn => {
@@ -1216,6 +1358,9 @@ function logPitch(result, batter, pitcher, extra = {}) {
     
     state.pitches.push(pitch);
     console.log('Logged pitch:', pitch);
+    
+    // Update pitch count alert after logging
+    updatePitchCountAlert();
 }
 
 function resetCount() {
@@ -1246,6 +1391,9 @@ function updateDisplay() {
     document.getElementById('outCount').textContent = state.outs;
     document.getElementById('inningNum').textContent = state.inning;
     document.getElementById('pitchNum').textContent = state.totalPitches;
+    
+    // Update pitch count alert
+    updatePitchCountAlert();
 }
 
 // Quick Actions
@@ -1434,14 +1582,22 @@ function parseVoiceCommand(text) {
 // Settings Management
 let settings = {
     coachEmails: [],
-    yourTeamName: ''
+    yourTeamName: '',
+    maxPitchCount: 85,
+    warningPitchCount: 70,
+    pitchAlertSound: false
 };
+
+// Track pitcher pitch counts across game
+let pitcherPitchCounts = {};
+let lastAlertPitchCount = 0;
 
 function loadSettings() {
     if (!currentTeamCode) return;
     const saved = localStorage.getItem(getStorageKey('settings'));
     if (saved) {
-        settings = JSON.parse(saved);
+        const loadedSettings = JSON.parse(saved);
+        settings = { ...settings, ...loadedSettings };
     }
 }
 
@@ -1451,15 +1607,134 @@ function saveSettings() {
         .map(e => e.trim())
         .filter(e => e && e.includes('@'));
     settings.yourTeamName = document.getElementById('yourTeamName').value.trim();
+    settings.maxPitchCount = parseInt(document.getElementById('maxPitchCount').value) || 85;
+    settings.warningPitchCount = parseInt(document.getElementById('warningPitchCount').value) || 70;
+    settings.pitchAlertSound = document.getElementById('pitchAlertSound').checked;
+    
+    // Validate thresholds
+    if (settings.warningPitchCount >= settings.maxPitchCount) {
+        alert('Warning threshold must be less than max pitch count!');
+        return;
+    }
+    
     localStorage.setItem(getStorageKey('settings'), JSON.stringify(settings));
     closeSettingsModal();
+    updatePitchCountAlert();
     alert('Settings saved! ' + settings.coachEmails.length + ' coach email(s) configured.');
 }
 
 function showSettingsModal() {
     document.getElementById('coachEmails').value = settings.coachEmails.join('\n');
     document.getElementById('yourTeamName').value = settings.yourTeamName;
+    document.getElementById('maxPitchCount').value = settings.maxPitchCount;
+    document.getElementById('warningPitchCount').value = settings.warningPitchCount;
+    document.getElementById('pitchAlertSound').checked = settings.pitchAlertSound;
     document.getElementById('settingsModal').classList.add('visible');
+}
+
+// Pitch Count Alert Functions
+function getCurrentPitcherPitchCount() {
+    const currentPitcher = document.getElementById('currentPitcher').value;
+    if (!currentPitcher) return 0;
+    
+    // Count pitches for current pitcher in this game
+    return state.pitches.filter(p => p.pitcher === currentPitcher).length;
+}
+
+function updatePitchCountAlert() {
+    const currentPitcher = document.getElementById('currentPitcher').value;
+    const alertElement = document.getElementById('pitchCountAlert');
+    const pitcherNameEl = document.getElementById('alertPitcherName');
+    const pitchCountEl = document.getElementById('alertPitchCount');
+    const alertIcon = alertElement.querySelector('.alert-icon');
+    
+    if (!currentPitcher) {
+        pitcherNameEl.textContent = 'No pitcher selected';
+        pitchCountEl.textContent = `0 / ${settings.maxPitchCount}`;
+        alertElement.className = 'pitch-count-alert green';
+        alertIcon.textContent = '✅';
+        return;
+    }
+    
+    const pitchCount = getCurrentPitcherPitchCount();
+    const pitcherName = currentPitcher.split(' ').slice(1).join(' ') || currentPitcher;
+    
+    pitcherNameEl.textContent = pitcherName;
+    pitchCountEl.textContent = `${pitchCount} / ${settings.maxPitchCount}`;
+    
+    // Determine alert level
+    if (pitchCount >= settings.maxPitchCount) {
+        alertElement.className = 'pitch-count-alert red';
+        alertIcon.textContent = '🚨';
+        showAlertBanner('danger', `🚨 ${pitcherName} has reached the pitch limit (${pitchCount})! Consider a pitching change.`);
+    } else if (pitchCount >= settings.warningPitchCount) {
+        alertElement.className = 'pitch-count-alert yellow';
+        alertIcon.textContent = '⚠️';
+        // Only show warning banner once when crossing threshold
+        if (lastAlertPitchCount < settings.warningPitchCount && pitchCount >= settings.warningPitchCount) {
+            showAlertBanner('warning', `⚠️ ${pitcherName} approaching pitch limit (${pitchCount}/${settings.maxPitchCount})`);
+        }
+    } else {
+        alertElement.className = 'pitch-count-alert green';
+        alertIcon.textContent = '✅';
+    }
+    
+    lastAlertPitchCount = pitchCount;
+}
+
+function showAlertBanner(type, message) {
+    const banner = document.getElementById('pitchAlertBanner');
+    const textEl = document.getElementById('alertBannerText');
+    
+    banner.className = 'pitch-alert-banner visible ' + type;
+    textEl.textContent = message;
+    
+    // Play sound if enabled
+    if (settings.pitchAlertSound) {
+        playAlertSound(type);
+    }
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        dismissAlertBanner();
+    }, 5000);
+}
+
+function dismissAlertBanner() {
+    document.getElementById('pitchAlertBanner').classList.remove('visible');
+}
+
+function playAlertSound(type) {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        if (type === 'danger') {
+            // Urgent beeping for danger
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.3;
+            oscillator.start();
+            setTimeout(() => { oscillator.frequency.value = 600; }, 150);
+            setTimeout(() => { oscillator.frequency.value = 800; }, 300);
+            setTimeout(() => { oscillator.stop(); }, 450);
+        } else {
+            // Single tone for warning
+            oscillator.frequency.value = 600;
+            gainNode.gain.value = 0.2;
+            oscillator.start();
+            setTimeout(() => { oscillator.stop(); }, 200);
+        }
+    } catch (e) {
+        console.log('Audio not supported');
+    }
+}
+
+function viewGameHistory() {
+    window.location.href = 'history.html';
 }
 
 function closeSettingsModal() {
@@ -1616,11 +1891,17 @@ function startNewGame() {
         // Save current game to history
         const gameHistory = JSON.parse(localStorage.getItem(getStorageKey('history')) || '[]');
         if (state.pitches.length > 0) {
+            const battingTeam = document.getElementById('battingTeam').value || 'Unknown';
+            const pitchingTeam = document.getElementById('pitchingTeam').value || settings.yourTeamName || 'Our Team';
+            
             gameHistory.unshift({
                 id: state.gameId,
                 date: new Date().toISOString(),
                 pitches: state.pitches,
-                inning: state.inning
+                inning: state.inning,
+                battingTeam: battingTeam,
+                pitchingTeam: pitchingTeam,
+                totalPitches: state.totalPitches
             });
             localStorage.setItem(getStorageKey('history'), JSON.stringify(gameHistory.slice(0, 50))); // Keep last 50 games
         }

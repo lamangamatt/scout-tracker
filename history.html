@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Tracker - Game History</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+            --ball: #3182ce;
+            --strike: #e53e3e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 1.1em; }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .back-btn:active { opacity: 0.8; }
+        
+        .container {
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Team Modal */
+        .team-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .team-modal.hidden { display: none; }
+        .team-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .team-modal-content h2 {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        .team-modal-content p {
+            color: #718096;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .team-modal-content input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .team-modal-content input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .team-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-row input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .filter-row input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .filter-btn {
+            padding: 10px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .filter-btn.clear {
+            background: #e2e8f0;
+            color: var(--dark);
+        }
+        
+        /* Game List */
+        .game-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .game-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .game-card:active {
+            transform: scale(0.99);
+        }
+        
+        .game-header {
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #edf2f7;
+        }
+        
+        .game-header:hover {
+            background: #f7fafc;
+        }
+        
+        .game-info {
+            flex: 1;
+        }
+        
+        .game-date {
+            font-size: 0.8em;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+        
+        .game-teams {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .game-stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #4a5568;
+        }
+        
+        .game-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .expand-icon {
+            font-size: 1.5em;
+            color: #a0aec0;
+            transition: transform 0.3s;
+        }
+        
+        .game-card.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* Game Details */
+        .game-details {
+            display: none;
+            padding: 16px;
+            background: #f7fafc;
+            border-top: 1px solid #edf2f7;
+        }
+        
+        .game-card.expanded .game-details {
+            display: block;
+        }
+        
+        .detail-section {
+            margin-bottom: 16px;
+        }
+        
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .detail-title {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        /* Pitcher Summary */
+        .pitcher-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .pitcher-row {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pitcher-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .pitcher-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 0.85em;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.75em;
+            color: #718096;
+        }
+        
+        /* Inning Breakdown */
+        .inning-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+        }
+        
+        .inning-box {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .inning-num {
+            font-size: 0.75em;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+        
+        .inning-pitches {
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        /* Pitch Log */
+        .pitch-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+        }
+        
+        .pitch-log-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 60px 80px;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 0.85em;
+            align-items: center;
+        }
+        
+        .pitch-log-item:last-child {
+            border-bottom: none;
+        }
+        
+        .pitch-num {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .pitch-type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8em;
+            background: #e2e8f0;
+        }
+        
+        .pitch-zone {
+            color: #718096;
+        }
+        
+        .pitch-result {
+            font-weight: 500;
+        }
+        
+        .pitch-result.ball { color: var(--ball); }
+        .pitch-result.strike { color: var(--strike); }
+        .pitch-result.hit { color: var(--success); }
+        .pitch-result.out { color: #718096; }
+        
+        /* No Games */
+        .no-games {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .no-games .icon {
+            font-size: 4em;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .no-games h2 {
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #e2e8f0;
+            color: var(--dark);
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .tab-btn:active {
+            transform: scale(0.98);
+        }
+        
+        /* Delete Button */
+        .delete-btn {
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: #fed7d7;
+            color: #c53030;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .delete-btn:active {
+            background: #feb2b2;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Team Selection Modal -->
+<div id="teamSelectModal" class="team-modal">
+    <div class="team-modal-content">
+        <h2>📜 Game History</h2>
+        <p>Enter your team code to view history</p>
+        <input type="text" id="teamCodeInput" placeholder="e.g., bingham2026" autocapitalize="none" autocorrect="off">
+        <button onclick="setTeamCode()" class="team-submit-btn">View History</button>
+    </div>
+</div>
+
+<header class="header">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <h1>📜 Game History</h1>
+    <button class="back-btn" onclick="switchTeam()">Switch Team</button>
+</header>
+
+<div class="container">
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <input type="date" id="filterFrom" placeholder="From">
+            <input type="date" id="filterTo" placeholder="To">
+            <button class="filter-btn" onclick="applyFilter()">Filter</button>
+            <button class="filter-btn clear" onclick="clearFilter()">Clear</button>
+        </div>
+    </div>
+    
+    <!-- Game List -->
+    <div class="game-list" id="gameList">
+        <!-- Games will be rendered here -->
+    </div>
+</div>
+
+<script>
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+let games = [];
+let filteredGames = [];
+
+function checkTeamCode() {
+    if (!currentTeamCode) {
+        document.getElementById('teamSelectModal').classList.remove('hidden');
+    } else {
+        document.getElementById('teamSelectModal').classList.add('hidden');
+        document.querySelector('.header h1').textContent = '📜 ' + currentTeamCode.toUpperCase();
+        loadGames();
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamSelectModal').classList.add('hidden');
+    document.querySelector('.header h1').textContent = '📜 ' + currentTeamCode.toUpperCase();
+    loadGames();
+}
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+function switchTeam() {
+    if (confirm('Switch to a different team?')) {
+        localStorage.removeItem('scoutTrackerTeamCode');
+        location.reload();
+    }
+}
+
+function goBack() {
+    window.location.href = 'index.html';
+}
+
+// Load games from localStorage
+function loadGames() {
+    const saved = localStorage.getItem(getStorageKey('history'));
+    games = saved ? JSON.parse(saved) : [];
+    filteredGames = [...games];
+    renderGames();
+}
+
+// Filter functions
+function applyFilter() {
+    const fromDate = document.getElementById('filterFrom').value;
+    const toDate = document.getElementById('filterTo').value;
+    
+    filteredGames = games.filter(game => {
+        const gameDate = new Date(game.date).toISOString().split('T')[0];
+        if (fromDate && gameDate < fromDate) return false;
+        if (toDate && gameDate > toDate) return false;
+        return true;
+    });
+    
+    renderGames();
+}
+
+function clearFilter() {
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value = '';
+    filteredGames = [...games];
+    renderGames();
+}
+
+// Render games
+function renderGames() {
+    const container = document.getElementById('gameList');
+    
+    if (filteredGames.length === 0) {
+        container.innerHTML = `
+            <div class="no-games">
+                <div class="icon">📜</div>
+                <h2>No Games Found</h2>
+                <p>${games.length === 0 ? 'Start tracking games to see history here!' : 'Try adjusting your filter dates.'}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = filteredGames.map((game, index) => {
+        const date = new Date(game.date);
+        const dateStr = date.toLocaleDateString('en-US', { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric'
+        });
+        
+        const pitcherStats = calculatePitcherStats(game.pitches);
+        const inningStats = calculateInningStats(game.pitches);
+        
+        return `
+            <div class="game-card" id="game-${index}">
+                <div class="game-header" onclick="toggleGame(${index})">
+                    <div class="game-info">
+                        <div class="game-date">${dateStr}</div>
+                        <div class="game-teams">vs ${game.battingTeam || 'Unknown Opponent'}</div>
+                        <div class="game-stats">
+                            <span class="game-stat">⚾ ${game.pitches.length} pitches</span>
+                            <span class="game-stat">📊 ${game.inning || '?'} innings</span>
+                        </div>
+                    </div>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="game-details">
+                    <!-- Pitcher Summary -->
+                    <div class="detail-section">
+                        <div class="detail-title">Pitcher Summary</div>
+                        <div class="pitcher-summary">
+                            ${Object.entries(pitcherStats).map(([name, stats]) => `
+                                <div class="pitcher-row">
+                                    <span class="pitcher-name">${name}</span>
+                                    <div class="pitcher-stats">
+                                        <div class="stat-item">
+                                            <div class="stat-value">${stats.pitches}</div>
+                                            <div class="stat-label">Pitches</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-value">${stats.strikePct}%</div>
+                                            <div class="stat-label">Str%</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-value">${stats.strikeouts}</div>
+                                            <div class="stat-label">K</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-value">${stats.walks}</div>
+                                            <div class="stat-label">BB</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Inning Breakdown -->
+                    <div class="detail-section">
+                        <div class="detail-title">Pitches by Inning</div>
+                        <div class="inning-grid">
+                            ${Object.entries(inningStats).map(([inning, count]) => `
+                                <div class="inning-box">
+                                    <div class="inning-num">Inn ${inning}</div>
+                                    <div class="inning-pitches">${count}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Pitch Log Toggle -->
+                    <div class="detail-section">
+                        <div class="detail-title">Pitch-by-Pitch Log</div>
+                        <div class="tabs">
+                            <button class="tab-btn active" onclick="showPitchLog(${index})">View All Pitches</button>
+                        </div>
+                        <div class="pitch-log" id="pitch-log-${index}" style="display: none;">
+                            ${renderPitchLog(game.pitches)}
+                        </div>
+                    </div>
+                    
+                    <button class="delete-btn" onclick="deleteGame(${index})">🗑️ Delete This Game</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleGame(index) {
+    const card = document.getElementById(`game-${index}`);
+    card.classList.toggle('expanded');
+}
+
+function showPitchLog(index) {
+    const log = document.getElementById(`pitch-log-${index}`);
+    log.style.display = log.style.display === 'none' ? 'block' : 'none';
+}
+
+function calculatePitcherStats(pitches) {
+    const stats = {};
+    
+    pitches.forEach(p => {
+        const pitcher = p.pitcher || 'Unknown';
+        if (!stats[pitcher]) {
+            stats[pitcher] = { 
+                pitches: 0, 
+                strikes: 0, 
+                balls: 0,
+                strikeouts: 0, 
+                walks: 0, 
+                hits: 0 
+            };
+        }
+        
+        stats[pitcher].pitches++;
+        
+        if (['ball', 'walk'].includes(p.result)) {
+            stats[pitcher].balls++;
+        } else {
+            stats[pitcher].strikes++;
+        }
+        
+        if (p.result === 'strikeout_looking' || p.result === 'strikeout_swinging') {
+            stats[pitcher].strikeouts++;
+        }
+        if (p.result === 'walk') stats[pitcher].walks++;
+        if (p.result === 'single' || p.result === 'extra_base_hit') stats[pitcher].hits++;
+    });
+    
+    // Calculate percentages
+    Object.keys(stats).forEach(pitcher => {
+        const s = stats[pitcher];
+        s.strikePct = s.pitches > 0 ? Math.round((s.strikes / s.pitches) * 100) : 0;
+    });
+    
+    return stats;
+}
+
+function calculateInningStats(pitches) {
+    const stats = {};
+    
+    pitches.forEach(p => {
+        const inning = p.inning || 1;
+        if (!stats[inning]) stats[inning] = 0;
+        stats[inning]++;
+    });
+    
+    return stats;
+}
+
+function renderPitchLog(pitches) {
+    if (pitches.length === 0) {
+        return '<div style="padding: 20px; text-align: center; color: #718096;">No pitches recorded</div>';
+    }
+    
+    return pitches.map((p, i) => {
+        let resultClass = '';
+        if (p.result === 'ball' || p.result === 'walk') resultClass = 'ball';
+        else if (p.result.includes('strike') || p.result === 'foul') resultClass = 'strike';
+        else if (p.result === 'single' || p.result === 'extra_base_hit') resultClass = 'hit';
+        else if (p.result === 'out') resultClass = 'out';
+        
+        return `
+            <div class="pitch-log-item">
+                <span class="pitch-num">#${i + 1}</span>
+                <span class="pitch-type-badge">${p.pitchType || '?'}</span>
+                <span class="pitch-zone">${p.zone || '-'}</span>
+                <span class="pitch-result ${resultClass}">${formatResult(p.result)}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function formatResult(result) {
+    const map = {
+        'ball': 'Ball',
+        'called_strike': 'Called',
+        'swinging_strike': 'Swing K',
+        'foul': 'Foul',
+        'walk': 'Walk',
+        'strikeout_looking': 'K Look',
+        'strikeout_swinging': 'K Swing',
+        'single': '1B',
+        'extra_base_hit': 'XBH',
+        'out': 'Out',
+        'error': 'Error'
+    };
+    return map[result] || result;
+}
+
+function deleteGame(index) {
+    if (confirm('Delete this game from history? This cannot be undone.')) {
+        games.splice(index, 1);
+        localStorage.setItem(getStorageKey('history'), JSON.stringify(games));
+        filteredGames = [...games];
+        renderGames();
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', checkTeamCode);
+
+// Enter key support
+document.getElementById('teamCodeInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') setTeamCode();
+});
+</script>
+
+</body>
+</html>

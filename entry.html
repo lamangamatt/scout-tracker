@@ -389,6 +389,71 @@
         .snap-lineup-btn.processing .camera-icon { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
+        /* Team Selection Modal */
+        .team-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .team-modal.hidden { display: none; }
+        .team-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .team-modal-content h2 {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        .team-modal-content p {
+            color: #718096;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .team-modal-content input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .team-modal-content input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .team-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .team-submit-btn:active { transform: scale(0.98); }
+        .team-hint {
+            font-size: 0.75em !important;
+            color: #a0aec0 !important;
+            margin-top: 16px !important;
+            margin-bottom: 0 !important;
+        }
+        
         .ocr-preview {
             max-width: 100%;
             max-height: 150px;
@@ -438,10 +503,22 @@
 </head>
 <body>
 
+<!-- Team Selection Modal -->
+<div id="teamSelectModal" class="team-modal">
+    <div class="team-modal-content">
+        <h2>⚾ Scout Tracker</h2>
+        <p>Enter your team code to get started</p>
+        <input type="text" id="teamCodeInput" placeholder="e.g., bingham2026" autocapitalize="none" autocorrect="off">
+        <button onclick="setTeamCode()" class="team-submit-btn">Start Tracking</button>
+        <p class="team-hint">Your team code keeps your data separate from other teams</p>
+    </div>
+</div>
+
 <header class="header">
     <h1>⚾ Scout Tracker</h1>
-    <div>
+    <div style="display: flex; align-items: center; gap: 8px;">
         <span class="sync-status" id="syncStatus">Connecting...</span>
+        <button onclick="switchTeam()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7em; cursor: pointer;">Switch</button>
     </div>
 </header>
 
@@ -694,6 +771,57 @@ try {
     console.log('Firebase not configured, using localStorage');
 }
 
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+
+function checkTeamCode() {
+    if (!currentTeamCode) {
+        document.getElementById('teamSelectModal').classList.remove('hidden');
+    } else {
+        document.getElementById('teamSelectModal').classList.add('hidden');
+        document.querySelector('.header h1').textContent = '⚾ ' + currentTeamCode.toUpperCase();
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    // Sanitize: only allow letters, numbers, hyphens
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamSelectModal').classList.add('hidden');
+    document.querySelector('.header h1').textContent = '⚾ ' + currentTeamCode.toUpperCase();
+    // Reload data for this team
+    loadTeams();
+    loadSettings();
+}
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+function getFirebasePath(path) {
+    return 'teams/' + currentTeamCode + '/' + path;
+}
+
+function switchTeam() {
+    if (confirm('Switch to a different team? Your current data is saved.')) {
+        localStorage.removeItem('scoutTrackerTeamCode');
+        location.reload();
+    }
+}
+
+// Initialize team check on load
+document.addEventListener('DOMContentLoaded', checkTeamCode);
+
 // Game State
 let state = {
     gameId: 'game_' + Date.now(),
@@ -715,7 +843,8 @@ let state = {
 
 // Load teams from localStorage
 function loadTeams() {
-    const saved = localStorage.getItem('scoutTrackerTeams');
+    if (!currentTeamCode) return;
+    const saved = localStorage.getItem(getStorageKey('teams'));
     if (saved) {
         state.teams = JSON.parse(saved);
         updateTeamDropdowns();
@@ -739,7 +868,7 @@ function loadTeams() {
 }
 
 function saveTeams() {
-    localStorage.setItem('scoutTrackerTeams', JSON.stringify(state.teams));
+    localStorage.setItem(getStorageKey('teams'), JSON.stringify(state.teams));
 }
 
 function updateTeamDropdowns() {
@@ -1171,14 +1300,16 @@ function generateCSV() {
 function syncToFirebase() {
     const syncStatus = document.getElementById('syncStatus');
     
+    if (!currentTeamCode) return; // Don't sync without team code
+    
     if (useLocalStorage) {
-        localStorage.setItem('scoutTrackerState', JSON.stringify(state));
+        localStorage.setItem(getStorageKey('state'), JSON.stringify(state));
         syncStatus.textContent = 'Local';
         syncStatus.className = 'sync-status connected';
         return;
     }
     
-    db.ref('games/' + state.gameId).set(state)
+    db.ref(getFirebasePath('games/' + state.gameId)).set(state)
         .then(() => {
             syncStatus.textContent = '✓ Synced';
             syncStatus.className = 'sync-status connected';
@@ -1187,7 +1318,7 @@ function syncToFirebase() {
             syncStatus.textContent = 'Sync Error';
             syncStatus.className = 'sync-status disconnected';
             // Fallback to localStorage
-            localStorage.setItem('scoutTrackerState', JSON.stringify(state));
+            localStorage.setItem(getStorageKey('state'), JSON.stringify(state));
         });
 }
 
@@ -1302,7 +1433,8 @@ let settings = {
 };
 
 function loadSettings() {
-    const saved = localStorage.getItem('scoutTrackerSettings');
+    if (!currentTeamCode) return;
+    const saved = localStorage.getItem(getStorageKey('settings'));
     if (saved) {
         settings = JSON.parse(saved);
     }
@@ -1314,7 +1446,7 @@ function saveSettings() {
         .map(e => e.trim())
         .filter(e => e && e.includes('@'));
     settings.yourTeamName = document.getElementById('yourTeamName').value.trim();
-    localStorage.setItem('scoutTrackerSettings', JSON.stringify(settings));
+    localStorage.setItem(getStorageKey('settings'), JSON.stringify(settings));
     closeSettingsModal();
     alert('Settings saved! ' + settings.coachEmails.length + ' coach email(s) configured.');
 }
@@ -1477,7 +1609,7 @@ function downloadGameData() {
 function startNewGame() {
     if (confirm('Are you sure you want to start a new game? Current data will be saved to history.')) {
         // Save current game to history
-        const gameHistory = JSON.parse(localStorage.getItem('scoutTrackerHistory') || '[]');
+        const gameHistory = JSON.parse(localStorage.getItem(getStorageKey('history')) || '[]');
         if (state.pitches.length > 0) {
             gameHistory.unshift({
                 id: state.gameId,
@@ -1485,7 +1617,7 @@ function startNewGame() {
                 pitches: state.pitches,
                 inning: state.inning
             });
-            localStorage.setItem('scoutTrackerHistory', JSON.stringify(gameHistory.slice(0, 50))); // Keep last 50 games
+            localStorage.setItem(getStorageKey('history'), JSON.stringify(gameHistory.slice(0, 50))); // Keep last 50 games
         }
         
         // Reset state

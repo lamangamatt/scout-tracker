@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Tracker - Team Admin</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --danger: #c53030;
+            --light: #f7fafc;
+            --dark: #2d3748;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 1.1em; display: flex; align-items: center; gap: 8px; }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .back-btn:active { transform: scale(0.95); }
+        
+        .container {
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Team Code Hero Section */
+        .team-code-hero {
+            background: linear-gradient(135deg, var(--primary), #2c5282);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .team-code-hero .label {
+            font-size: 0.85em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        
+        .team-code-display {
+            font-size: 2em;
+            font-weight: 800;
+            letter-spacing: 2px;
+            padding: 16px 24px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+        
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .share-btn.primary { background: white; color: var(--primary); }
+        .share-btn.secondary { background: rgba(255,255,255,0.2); color: white; }
+        .share-btn:active { transform: scale(0.95); }
+        
+        /* QR Code Container */
+        .qr-container {
+            display: none;
+            margin-top: 16px;
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+        }
+        
+        .qr-container.visible { display: block; }
+        
+        #qrCode {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #qrCode canvas { max-width: 100%; }
+        
+        /* Section Cards */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-subtitle {
+            font-size: 0.75em;
+            color: #718096;
+            margin-top: 2px;
+        }
+        
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        
+        .data-table th {
+            text-align: left;
+            padding: 10px 8px;
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+        
+        .data-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .data-table tr:last-child td { border-bottom: none; }
+        
+        .data-table .actions {
+            text-align: right;
+            white-space: nowrap;
+        }
+        
+        .data-table .actions button {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+        
+        .btn-edit { background: #ebf4ff; color: #3182ce; }
+        .btn-delete { background: #fed7d7; color: var(--danger); }
+        .btn-edit:active, .btn-delete:active { transform: scale(0.95); }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: #a0aec0;
+        }
+        
+        .empty-state .icon { font-size: 2em; margin-bottom: 8px; }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 4px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.1s;
+        }
+        
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-ghost { background: #e2e8f0; color: var(--dark); }
+        .btn-full { width: 100%; }
+        .btn-sm { padding: 8px 12px; font-size: 0.8em; }
+        
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .btn-group .btn { flex: 1; }
+        
+        /* Danger Zone */
+        .danger-zone {
+            border: 2px solid #fed7d7;
+            background: #fff5f5;
+        }
+        
+        .danger-zone .section-title { color: var(--danger); }
+        
+        .danger-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #fed7d7;
+        }
+        
+        .danger-item:last-child { border-bottom: none; }
+        
+        .danger-item .info h4 {
+            font-size: 0.95em;
+            color: var(--dark);
+            margin-bottom: 2px;
+        }
+        
+        .danger-item .info p {
+            font-size: 0.8em;
+            color: #718096;
+        }
+        
+        /* Storage Bar */
+        .storage-bar {
+            background: #e2e8f0;
+            border-radius: 8px;
+            height: 12px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        
+        .storage-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--warning));
+            border-radius: 8px;
+            transition: width 0.3s;
+        }
+        
+        .storage-bar .fill.high { background: linear-gradient(90deg, var(--warning), var(--danger)); }
+        
+        .storage-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #718096;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.visible { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 450px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.2em;
+            color: var(--primary);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #a0aec0;
+            cursor: pointer;
+        }
+        
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .toast {
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .toast.success { background: var(--success); color: white; }
+        .toast.error { background: var(--danger); color: white; }
+        .toast.warning { background: var(--warning); color: white; }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Coach Role Tags */
+        .role-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .role-tag.head { background: #ebf4ff; color: #2b6cb0; }
+        .role-tag.assistant { background: #f0fff4; color: #276749; }
+        .role-tag.scorekeeper { background: #faf5ff; color: #6b46c1; }
+        
+        /* Drag Handle */
+        .drag-handle {
+            cursor: grab;
+            color: #a0aec0;
+            font-size: 1.2em;
+            padding: 0 8px;
+        }
+        
+        .drag-handle:active { cursor: grabbing; }
+        
+        /* File Upload */
+        .file-drop-zone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .file-drop-zone:hover,
+        .file-drop-zone.drag-over {
+            border-color: var(--primary);
+            background: #ebf4ff;
+        }
+        
+        .file-drop-zone .icon { font-size: 2em; margin-bottom: 8px; }
+        .file-drop-zone p { color: #718096; font-size: 0.9em; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 10px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Color Picker */
+        .color-picker-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .color-swatch {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+        
+        .color-swatch input {
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        /* Import/Export Buttons */
+        .import-export-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        /* Position tags */
+        .position-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .position-tag {
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>⚙️ Team Admin</h1>
+        <a href="index.html" class="back-btn">← Back</a>
+    </header>
+    
+    <div class="container">
+        <!-- Team Code Hero -->
+        <div class="team-code-hero">
+            <div class="label">Your Team Code</div>
+            <div class="team-code-display" id="teamCodeDisplay">---</div>
+            <div class="share-buttons">
+                <button class="share-btn primary" onclick="copyTeamCode()">
+                    📋 Copy Code
+                </button>
+                <button class="share-btn secondary" onclick="shareTeamCode()">
+                    📤 Share
+                </button>
+                <button class="share-btn secondary" onclick="toggleQRCode()">
+                    📱 QR Code
+                </button>
+            </div>
+            <div class="qr-container" id="qrContainer">
+                <div id="qrCode"></div>
+                <p style="margin-top: 8px; font-size: 0.8em; color: var(--dark);">Scan to join team</p>
+            </div>
+        </div>
+        
+        <!-- Team Settings -->
+        <div class="section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">🏟️ Team Settings</div>
+                    <div class="section-subtitle">Basic team information</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Team Name</label>
+                <input type="text" id="teamNameInput" placeholder="e.g., Bingham Miners">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Season Year</label>
+                    <input type="text" id="seasonYear" placeholder="2025">
+                </div>
+                <div class="form-group">
+                    <label>League/Division</label>
+                    <input type="text" id="leagueName" placeholder="e.g., 6A Region 3">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Team Colors</label>
+                <div class="color-picker-row">
+                    <div class="color-swatch" id="primaryColorSwatch" style="background: #1a365d;">
+                        <input type="color" id="primaryColor" value="#1a365d" onchange="updateColorSwatch('primary')">
+                    </div>
+                    <div>
+                        <div style="font-size: 0.8em; font-weight: 600;">Primary</div>
+                        <div style="font-size: 0.75em; color: #718096;">Main team color</div>
+                    </div>
+                    <div class="color-swatch" id="secondaryColorSwatch" style="background: #e53e3e;">
+                        <input type="color" id="secondaryColor" value="#e53e3e" onchange="updateColorSwatch('secondary')">
+                    </div>
+                    <div>
+                        <div style="font-size: 0.8em; font-weight: 600;">Secondary</div>
+                        <div style="font-size: 0.75em; color: #718096;">Accent color</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary btn-full" onclick="saveTeamSettings()">Save Team Settings</button>
+        </div>
+        
+        <!-- Pitch Count Limits -->
+        <div class="section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">⚾ Pitch Count Limits</div>
+                    <div class="section-subtitle">Protect your pitchers' arms</div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Warning Threshold (Yellow)</label>
+                    <input type="number" id="warningPitchCount" value="70" min="10" max="140">
+                </div>
+                <div class="form-group">
+                    <label>Max Pitches (Red)</label>
+                    <input type="number" id="maxPitchCount" value="85" min="20" max="150">
+                </div>
+            </div>
+            
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="pitchAlertSound" style="width: 20px; height: 20px;">
+                <label for="pitchAlertSound" style="margin: 0;">🔔 Play sound when limit reached</label>
+            </div>
+            
+            <button class="btn btn-primary btn-full" onclick="savePitchLimits()">Save Pitch Limits</button>
+        </div>
+        
+        <!-- Roster Management -->
+        <div class="section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">👥 Roster Management</div>
+                    <div class="section-subtitle">Manage your team's players</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="showAddPlayerModal()">+ Add Player</button>
+            </div>
+            
+            <div class="import-export-btns" style="margin-bottom: 12px;">
+                <button class="btn btn-ghost btn-sm" onclick="showImportRosterModal()">📥 Import CSV</button>
+                <button class="btn btn-ghost btn-sm" onclick="exportRosterCSV()">📤 Export CSV</button>
+            </div>
+            
+            <div id="rosterTable">
+                <div class="empty-state">
+                    <div class="icon">👥</div>
+                    <p>No players yet. Add your first player!</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Coach Management -->
+        <div class="section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">🧢 Coaches</div>
+                    <div class="section-subtitle">Team staff and email recipients</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="showAddCoachModal()">+ Add Coach</button>
+            </div>
+            
+            <div id="coachTable">
+                <div class="empty-state">
+                    <div class="icon">🧢</div>
+                    <p>No coaches added yet.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Management -->
+        <div class="section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">💾 Data Management</div>
+                    <div class="section-subtitle">Backup and storage</div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 0.85em; font-weight: 600; margin-bottom: 4px;">Storage Used</div>
+                <div class="storage-bar">
+                    <div class="fill" id="storageFill" style="width: 0%"></div>
+                </div>
+                <div class="storage-info">
+                    <span id="storageUsed">Calculating...</span>
+                    <span id="storageLimit">/ 5 MB</span>
+                </div>
+            </div>
+            
+            <div class="import-export-btns" style="margin-bottom: 12px;">
+                <button class="btn btn-success btn-sm" onclick="exportAllData()">📤 Export Backup</button>
+                <button class="btn btn-warning btn-sm" onclick="showImportDataModal()">📥 Import Backup</button>
+            </div>
+            
+            <div style="font-size: 0.85em; font-weight: 600; margin-bottom: 8px; margin-top: 16px;">Data Breakdown</div>
+            <div id="dataBreakdown" style="font-size: 0.85em; color: #4a5568;"></div>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div class="section danger-zone">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">⚠️ Danger Zone</div>
+                    <div class="section-subtitle">Destructive actions - be careful!</div>
+                </div>
+            </div>
+            
+            <div class="danger-item">
+                <div class="info">
+                    <h4>Clear Game History</h4>
+                    <p>Delete all recorded games and pitch data</p>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="confirmClearGames()">Clear</button>
+            </div>
+            
+            <div class="danger-item">
+                <div class="info">
+                    <h4>Clear Opponent Data</h4>
+                    <p>Delete all scouting reports and opponent info</p>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="confirmClearOpponents()">Clear</button>
+            </div>
+            
+            <div class="danger-item">
+                <div class="info">
+                    <h4>Reset Entire Team</h4>
+                    <p>Delete ALL data and start fresh</p>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="confirmResetTeam()">Reset All</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Add/Edit Player Modal -->
+    <div class="modal" id="playerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="playerModalTitle">Add Player</h3>
+                <button class="modal-close" onclick="closePlayerModal()">&times;</button>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Jersey Number *</label>
+                    <input type="text" id="playerNumber" placeholder="23">
+                </div>
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="playerName" placeholder="John Smith">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Positions (comma-separated)</label>
+                <input type="text" id="playerPositions" placeholder="P, SS, CF">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Bats</label>
+                    <select id="playerBats">
+                        <option value="R">Right</option>
+                        <option value="L">Left</option>
+                        <option value="S">Switch</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Throws</label>
+                    <select id="playerThrows">
+                        <option value="R">Right</option>
+                        <option value="L">Left</option>
+                    </select>
+                </div>
+            </div>
+            
+            <input type="hidden" id="editingPlayerIndex" value="-1">
+            
+            <div class="btn-group">
+                <button class="btn btn-ghost" onclick="closePlayerModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="savePlayer()">Save Player</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Coach Modal -->
+    <div class="modal" id="coachModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="coachModalTitle">Add Coach</h3>
+                <button class="modal-close" onclick="closeCoachModal()">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="coachName" placeholder="Coach Johnson">
+            </div>
+            
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="coachEmail" placeholder="coach@school.edu">
+            </div>
+            
+            <div class="form-group">
+                <label>Role</label>
+                <select id="coachRole">
+                    <option value="head">Head Coach</option>
+                    <option value="assistant">Assistant Coach</option>
+                    <option value="scorekeeper">Scorekeeper</option>
+                </select>
+            </div>
+            
+            <input type="hidden" id="editingCoachIndex" value="-1">
+            
+            <div class="btn-group">
+                <button class="btn btn-ghost" onclick="closeCoachModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCoach()">Save Coach</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Roster Modal -->
+    <div class="modal" id="importRosterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Import Roster from CSV</h3>
+                <button class="modal-close" onclick="closeImportRosterModal()">&times;</button>
+            </div>
+            
+            <p style="font-size: 0.9em; color: #718096; margin-bottom: 16px;">
+                Paste CSV data or upload a file. Expected format:<br>
+                <code style="font-size: 0.85em;">Number, Name, Positions, Bats, Throws</code>
+            </p>
+            
+            <div class="file-drop-zone" id="csvDropZone" onclick="document.getElementById('csvFileInput').click()">
+                <div class="icon">📄</div>
+                <p>Drop CSV file here or click to upload</p>
+            </div>
+            <input type="file" id="csvFileInput" accept=".csv,.txt" style="display: none;" onchange="handleCSVFile(this)">
+            
+            <div class="form-group" style="margin-top: 12px;">
+                <label>Or paste CSV data:</label>
+                <textarea id="csvPasteArea" rows="6" placeholder="23, John Smith, P/SS, R, R
+12, Mike Johnson, C/1B, L, R
+5, Chris Davis, CF, R, R"></textarea>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-ghost" onclick="closeImportRosterModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="importRosterFromCSV()">Import Players</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Data Modal -->
+    <div class="modal" id="importDataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Import Team Data</h3>
+                <button class="modal-close" onclick="closeImportDataModal()">&times;</button>
+            </div>
+            
+            <p style="font-size: 0.9em; color: #718096; margin-bottom: 16px;">
+                Import a previously exported JSON backup file. This will merge with existing data.
+            </p>
+            
+            <div class="file-drop-zone" id="jsonDropZone" onclick="document.getElementById('jsonFileInput').click()">
+                <div class="icon">📦</div>
+                <p>Drop JSON backup file here or click to upload</p>
+            </div>
+            <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="handleJSONFile(this)">
+            
+            <div class="form-group" style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="replaceAllData" style="width: 20px; height: 20px;">
+                <label for="replaceAllData" style="margin: 0;">Replace all existing data (instead of merge)</label>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-ghost" onclick="closeImportDataModal()">Cancel</button>
+                <button class="btn btn-warning" id="importDataBtn" onclick="importTeamData()" disabled>Import Data</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirm Action</h3>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            
+            <p id="confirmMessage" style="margin-bottom: 16px; color: #4a5568;"></p>
+            
+            <div class="form-group" id="confirmInputGroup" style="display: none;">
+                <label id="confirmInputLabel">Type to confirm:</label>
+                <input type="text" id="confirmInput" placeholder="">
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-ghost" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirmBtn" onclick="executeConfirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// QR Code library (simple implementation)
+class QRCode {
+    constructor(el, options) {
+        this.el = el;
+        this.options = options;
+        this.render();
+    }
+    
+    render() {
+        // Simple QR representation using CSS grid
+        const size = this.options.width || 128;
+        const text = this.options.text || '';
+        
+        // Create a simple visual representation
+        // In production, use a proper QR library like qrcode.js
+        this.el.innerHTML = `
+            <div style="width: ${size}px; height: ${size}px; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px;">
+                <div style="font-size: 40px; margin-bottom: 8px;">📱</div>
+                <div style="font-size: 12px; color: #4a5568; text-align: center; padding: 0 8px;">
+                    <strong>${text}</strong>
+                </div>
+                <div style="font-size: 10px; color: #a0aec0; margin-top: 4px;">Scan QR</div>
+            </div>
+        `;
+    }
+}
+
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+
+function getStorageKey(key) {
+    return currentTeamCode + '_' + key;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    if (!currentTeamCode) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    document.getElementById('teamCodeDisplay').textContent = currentTeamCode.toUpperCase();
+    loadAllData();
+    calculateStorage();
+});
+
+// Data Storage
+let teamData = {
+    settings: {
+        teamName: '',
+        seasonYear: new Date().getFullYear().toString(),
+        leagueName: '',
+        primaryColor: '#1a365d',
+        secondaryColor: '#e53e3e',
+        warningPitchCount: 70,
+        maxPitchCount: 85,
+        pitchAlertSound: false
+    },
+    roster: [],
+    coaches: []
+};
+
+function loadAllData() {
+    // Load team settings
+    const savedSettings = localStorage.getItem(getStorageKey('adminSettings'));
+    if (savedSettings) {
+        teamData.settings = { ...teamData.settings, ...JSON.parse(savedSettings) };
+    }
+    
+    // Load from existing settings (backward compatibility)
+    const oldSettings = localStorage.getItem(getStorageKey('settings'));
+    if (oldSettings) {
+        const old = JSON.parse(oldSettings);
+        if (old.yourTeamName) teamData.settings.teamName = old.yourTeamName;
+        if (old.maxPitchCount) teamData.settings.maxPitchCount = old.maxPitchCount;
+        if (old.warningPitchCount) teamData.settings.warningPitchCount = old.warningPitchCount;
+        if (old.pitchAlertSound) teamData.settings.pitchAlertSound = old.pitchAlertSound;
+    }
+    
+    // Load roster (convert from old format if needed)
+    const savedTeams = localStorage.getItem(getStorageKey('teams'));
+    if (savedTeams) {
+        const teams = JSON.parse(savedTeams);
+        // Get "our" team roster
+        const ourTeamName = teamData.settings.teamName || Object.keys(teams)[0];
+        if (ourTeamName && teams[ourTeamName]) {
+            teamData.roster = teams[ourTeamName].map((p, i) => ({
+                number: p.number,
+                name: p.name,
+                positions: p.positions || '',
+                bats: p.bats || 'R',
+                throws: p.throws || 'R',
+                order: i
+            }));
+        }
+    }
+    
+    // Load roster from new format
+    const savedRoster = localStorage.getItem(getStorageKey('roster'));
+    if (savedRoster) {
+        teamData.roster = JSON.parse(savedRoster);
+    }
+    
+    // Load coaches
+    const savedCoaches = localStorage.getItem(getStorageKey('coaches'));
+    if (savedCoaches) {
+        teamData.coaches = JSON.parse(savedCoaches);
+    } else {
+        // Convert from old email format
+        const oldEmails = localStorage.getItem(getStorageKey('coachEmails'));
+        if (oldEmails) {
+            teamData.coaches = oldEmails.split('\n')
+                .filter(e => e.trim())
+                .map((email, i) => ({
+                    name: '',
+                    email: email.trim(),
+                    role: i === 0 ? 'head' : 'assistant'
+                }));
+        }
+    }
+    
+    // Update UI
+    updateSettingsUI();
+    renderRoster();
+    renderCoaches();
+}
+
+function updateSettingsUI() {
+    document.getElementById('teamNameInput').value = teamData.settings.teamName || '';
+    document.getElementById('seasonYear').value = teamData.settings.seasonYear || '';
+    document.getElementById('leagueName').value = teamData.settings.leagueName || '';
+    document.getElementById('primaryColor').value = teamData.settings.primaryColor || '#1a365d';
+    document.getElementById('secondaryColor').value = teamData.settings.secondaryColor || '#e53e3e';
+    document.getElementById('warningPitchCount').value = teamData.settings.warningPitchCount || 70;
+    document.getElementById('maxPitchCount').value = teamData.settings.maxPitchCount || 85;
+    document.getElementById('pitchAlertSound').checked = teamData.settings.pitchAlertSound || false;
+    
+    updateColorSwatch('primary');
+    updateColorSwatch('secondary');
+}
+
+function updateColorSwatch(type) {
+    const input = document.getElementById(type + 'Color');
+    const swatch = document.getElementById(type + 'ColorSwatch');
+    swatch.style.background = input.value;
+}
+
+// Save Functions
+function saveTeamSettings() {
+    teamData.settings.teamName = document.getElementById('teamNameInput').value.trim();
+    teamData.settings.seasonYear = document.getElementById('seasonYear').value.trim();
+    teamData.settings.leagueName = document.getElementById('leagueName').value.trim();
+    teamData.settings.primaryColor = document.getElementById('primaryColor').value;
+    teamData.settings.secondaryColor = document.getElementById('secondaryColor').value;
+    
+    localStorage.setItem(getStorageKey('adminSettings'), JSON.stringify(teamData.settings));
+    
+    // Also update old settings format for compatibility
+    const oldSettings = JSON.parse(localStorage.getItem(getStorageKey('settings')) || '{}');
+    oldSettings.yourTeamName = teamData.settings.teamName;
+    localStorage.setItem(getStorageKey('settings'), JSON.stringify(oldSettings));
+    
+    showToast('Team settings saved!', 'success');
+}
+
+function savePitchLimits() {
+    teamData.settings.warningPitchCount = parseInt(document.getElementById('warningPitchCount').value) || 70;
+    teamData.settings.maxPitchCount = parseInt(document.getElementById('maxPitchCount').value) || 85;
+    teamData.settings.pitchAlertSound = document.getElementById('pitchAlertSound').checked;
+    
+    localStorage.setItem(getStorageKey('adminSettings'), JSON.stringify(teamData.settings));
+    
+    // Also update old settings format for compatibility
+    const oldSettings = JSON.parse(localStorage.getItem(getStorageKey('settings')) || '{}');
+    oldSettings.maxPitchCount = teamData.settings.maxPitchCount;
+    oldSettings.warningPitchCount = teamData.settings.warningPitchCount;
+    oldSettings.pitchAlertSound = teamData.settings.pitchAlertSound;
+    localStorage.setItem(getStorageKey('settings'), JSON.stringify(oldSettings));
+    
+    showToast('Pitch limits saved!', 'success');
+}
+
+// Roster Management
+function renderRoster() {
+    const container = document.getElementById('rosterTable');
+    
+    if (teamData.roster.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">👥</div>
+                <p>No players yet. Add your first player!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort by order or number
+    const sorted = [...teamData.roster].sort((a, b) => {
+        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+        return parseInt(a.number) - parseInt(b.number);
+    });
+    
+    container.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;"></th>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Pos</th>
+                    <th>B/T</th>
+                    <th class="actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="rosterBody">
+                ${sorted.map((p, i) => `
+                    <tr data-index="${teamData.roster.indexOf(p)}">
+                        <td><span class="drag-handle" title="Drag to reorder">⋮⋮</span></td>
+                        <td><strong>${p.number}</strong></td>
+                        <td>${p.name}</td>
+                        <td>
+                            <div class="position-tags">
+                                ${(p.positions || '').split(',').filter(x => x.trim()).map(pos => 
+                                    `<span class="position-tag">${pos.trim()}</span>`
+                                ).join('') || '-'}
+                            </div>
+                        </td>
+                        <td>${p.bats || 'R'}/${p.throws || 'R'}</td>
+                        <td class="actions">
+                            <button class="btn-edit" onclick="editPlayer(${teamData.roster.indexOf(p)})">Edit</button>
+                            <button class="btn-delete" onclick="deletePlayer(${teamData.roster.indexOf(p)})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    // Setup drag and drop
+    setupRosterDragDrop();
+}
+
+function setupRosterDragDrop() {
+    const tbody = document.getElementById('rosterBody');
+    if (!tbody) return;
+    
+    let draggedRow = null;
+    
+    tbody.querySelectorAll('tr').forEach(row => {
+        const handle = row.querySelector('.drag-handle');
+        
+        handle.addEventListener('mousedown', (e) => {
+            row.draggable = true;
+        });
+        
+        row.addEventListener('dragstart', (e) => {
+            draggedRow = row;
+            row.style.opacity = '0.5';
+        });
+        
+        row.addEventListener('dragend', (e) => {
+            row.style.opacity = '1';
+            row.draggable = false;
+            draggedRow = null;
+        });
+        
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedRow && draggedRow !== row) {
+                // Reorder
+                const fromIndex = parseInt(draggedRow.dataset.index);
+                const toIndex = parseInt(row.dataset.index);
+                
+                // Update order
+                const moved = teamData.roster[fromIndex];
+                teamData.roster.splice(fromIndex, 1);
+                teamData.roster.splice(toIndex, 0, moved);
+                
+                // Update order values
+                teamData.roster.forEach((p, i) => p.order = i);
+                
+                saveRoster();
+                renderRoster();
+            }
+        });
+    });
+}
+
+function showAddPlayerModal() {
+    document.getElementById('playerModalTitle').textContent = 'Add Player';
+    document.getElementById('playerNumber').value = '';
+    document.getElementById('playerName').value = '';
+    document.getElementById('playerPositions').value = '';
+    document.getElementById('playerBats').value = 'R';
+    document.getElementById('playerThrows').value = 'R';
+    document.getElementById('editingPlayerIndex').value = '-1';
+    document.getElementById('playerModal').classList.add('visible');
+}
+
+function editPlayer(index) {
+    const player = teamData.roster[index];
+    document.getElementById('playerModalTitle').textContent = 'Edit Player';
+    document.getElementById('playerNumber').value = player.number;
+    document.getElementById('playerName').value = player.name;
+    document.getElementById('playerPositions').value = player.positions || '';
+    document.getElementById('playerBats').value = player.bats || 'R';
+    document.getElementById('playerThrows').value = player.throws || 'R';
+    document.getElementById('editingPlayerIndex').value = index;
+    document.getElementById('playerModal').classList.add('visible');
+}
+
+function closePlayerModal() {
+    document.getElementById('playerModal').classList.remove('visible');
+}
+
+function savePlayer() {
+    const number = document.getElementById('playerNumber').value.trim();
+    const name = document.getElementById('playerName').value.trim();
+    const positions = document.getElementById('playerPositions').value.trim();
+    const bats = document.getElementById('playerBats').value;
+    const throws = document.getElementById('playerThrows').value;
+    const editIndex = parseInt(document.getElementById('editingPlayerIndex').value);
+    
+    if (!number || !name) {
+        showToast('Please enter number and name', 'error');
+        return;
+    }
+    
+    const player = {
+        number,
+        name,
+        positions,
+        bats,
+        throws,
+        order: editIndex >= 0 ? teamData.roster[editIndex].order : teamData.roster.length
+    };
+    
+    if (editIndex >= 0) {
+        teamData.roster[editIndex] = player;
+        showToast('Player updated!', 'success');
+    } else {
+        teamData.roster.push(player);
+        showToast('Player added!', 'success');
+    }
+    
+    saveRoster();
+    renderRoster();
+    closePlayerModal();
+}
+
+function deletePlayer(index) {
+    const player = teamData.roster[index];
+    if (confirm(`Remove ${player.name} (#${player.number}) from roster?`)) {
+        teamData.roster.splice(index, 1);
+        // Update order values
+        teamData.roster.forEach((p, i) => p.order = i);
+        saveRoster();
+        renderRoster();
+        showToast('Player removed', 'success');
+    }
+}
+
+function saveRoster() {
+    localStorage.setItem(getStorageKey('roster'), JSON.stringify(teamData.roster));
+    
+    // Also update old teams format for compatibility with entry.html
+    const savedTeams = JSON.parse(localStorage.getItem(getStorageKey('teams')) || '{}');
+    const teamName = teamData.settings.teamName || currentTeamCode;
+    savedTeams[teamName] = teamData.roster.map(p => ({
+        number: p.number,
+        name: p.name,
+        positions: p.positions,
+        bats: p.bats,
+        throws: p.throws
+    }));
+    localStorage.setItem(getStorageKey('teams'), JSON.stringify(savedTeams));
+}
+
+// Roster Import/Export
+function showImportRosterModal() {
+    document.getElementById('csvPasteArea').value = '';
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('importRosterModal').classList.add('visible');
+}
+
+function closeImportRosterModal() {
+    document.getElementById('importRosterModal').classList.remove('visible');
+}
+
+function handleCSVFile(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('csvPasteArea').value = e.target.result;
+    };
+    reader.readAsText(input.files[0]);
+}
+
+function importRosterFromCSV() {
+    const csvText = document.getElementById('csvPasteArea').value.trim();
+    if (!csvText) {
+        showToast('Please enter or upload CSV data', 'error');
+        return;
+    }
+    
+    const lines = csvText.split('\n').filter(line => line.trim());
+    let imported = 0;
+    
+    for (const line of lines) {
+        // Skip header row
+        if (line.toLowerCase().includes('number') && line.toLowerCase().includes('name')) continue;
+        
+        const parts = line.split(',').map(p => p.trim());
+        if (parts.length >= 2) {
+            const number = parts[0].replace(/[^0-9]/g, '') || '?';
+            const name = parts[1];
+            const positions = parts[2] || '';
+            const bats = (parts[3] || 'R').toUpperCase().charAt(0);
+            const throws = (parts[4] || 'R').toUpperCase().charAt(0);
+            
+            if (name) {
+                // Check for duplicate
+                const existing = teamData.roster.findIndex(p => p.number === number && p.name === name);
+                if (existing >= 0) {
+                    // Update existing
+                    teamData.roster[existing] = { ...teamData.roster[existing], positions, bats, throws };
+                } else {
+                    teamData.roster.push({
+                        number,
+                        name,
+                        positions,
+                        bats: bats === 'L' || bats === 'S' ? bats : 'R',
+                        throws: throws === 'L' ? 'L' : 'R',
+                        order: teamData.roster.length
+                    });
+                }
+                imported++;
+            }
+        }
+    }
+    
+    saveRoster();
+    renderRoster();
+    closeImportRosterModal();
+    showToast(`Imported ${imported} players!`, 'success');
+}
+
+function exportRosterCSV() {
+    if (teamData.roster.length === 0) {
+        showToast('No players to export', 'error');
+        return;
+    }
+    
+    const headers = 'Number,Name,Positions,Bats,Throws';
+    const rows = teamData.roster.map(p => 
+        `${p.number},"${p.name}","${p.positions || ''}",${p.bats || 'R'},${p.throws || 'R'}`
+    );
+    
+    const csv = [headers, ...rows].join('\n');
+    downloadFile(csv, `${currentTeamCode}_roster.csv`, 'text/csv');
+    showToast('Roster exported!', 'success');
+}
+
+// Coach Management
+function renderCoaches() {
+    const container = document.getElementById('coachTable');
+    
+    if (teamData.coaches.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🧢</div>
+                <p>No coaches added yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th class="actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${teamData.coaches.map((c, i) => `
+                    <tr>
+                        <td>${c.name || '-'}</td>
+                        <td style="font-size: 0.85em;">${c.email}</td>
+                        <td><span class="role-tag ${c.role}">${getRoleName(c.role)}</span></td>
+                        <td class="actions">
+                            <button class="btn-edit" onclick="editCoach(${i})">Edit</button>
+                            <button class="btn-delete" onclick="deleteCoach(${i})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function getRoleName(role) {
+    const roles = { head: 'Head', assistant: 'Asst', scorekeeper: 'Stats' };
+    return roles[role] || role;
+}
+
+function showAddCoachModal() {
+    document.getElementById('coachModalTitle').textContent = 'Add Coach';
+    document.getElementById('coachName').value = '';
+    document.getElementById('coachEmail').value = '';
+    document.getElementById('coachRole').value = 'assistant';
+    document.getElementById('editingCoachIndex').value = '-1';
+    document.getElementById('coachModal').classList.add('visible');
+}
+
+function editCoach(index) {
+    const coach = teamData.coaches[index];
+    document.getElementById('coachModalTitle').textContent = 'Edit Coach';
+    document.getElementById('coachName').value = coach.name || '';
+    document.getElementById('coachEmail').value = coach.email;
+    document.getElementById('coachRole').value = coach.role || 'assistant';
+    document.getElementById('editingCoachIndex').value = index;
+    document.getElementById('coachModal').classList.add('visible');
+}
+
+function closeCoachModal() {
+    document.getElementById('coachModal').classList.remove('visible');
+}
+
+function saveCoach() {
+    const name = document.getElementById('coachName').value.trim();
+    const email = document.getElementById('coachEmail').value.trim();
+    const role = document.getElementById('coachRole').value;
+    const editIndex = parseInt(document.getElementById('editingCoachIndex').value);
+    
+    if (!email) {
+        showToast('Please enter an email address', 'error');
+        return;
+    }
+    
+    if (!email.includes('@')) {
+        showToast('Please enter a valid email', 'error');
+        return;
+    }
+    
+    const coach = { name, email, role };
+    
+    if (editIndex >= 0) {
+        teamData.coaches[editIndex] = coach;
+        showToast('Coach updated!', 'success');
+    } else {
+        teamData.coaches.push(coach);
+        showToast('Coach added!', 'success');
+    }
+    
+    saveCoaches();
+    renderCoaches();
+    closeCoachModal();
+}
+
+function deleteCoach(index) {
+    const coach = teamData.coaches[index];
+    if (confirm(`Remove ${coach.name || coach.email} from coaching staff?`)) {
+        teamData.coaches.splice(index, 1);
+        saveCoaches();
+        renderCoaches();
+        showToast('Coach removed', 'success');
+    }
+}
+
+function saveCoaches() {
+    localStorage.setItem(getStorageKey('coaches'), JSON.stringify(teamData.coaches));
+    
+    // Also update old format for compatibility
+    const emails = teamData.coaches.map(c => c.email).join('\n');
+    localStorage.setItem(getStorageKey('coachEmails'), emails);
+}
+
+// Team Code Sharing
+function copyTeamCode() {
+    navigator.clipboard.writeText(currentTeamCode).then(() => {
+        showToast('Team code copied!', 'success');
+    }).catch(() => {
+        // Fallback
+        const input = document.createElement('input');
+        input.value = currentTeamCode;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Team code copied!', 'success');
+    });
+}
+
+function shareTeamCode() {
+    const shareData = {
+        title: 'Join My Scout Tracker Team',
+        text: `Join my baseball team on Scout Tracker!\n\nTeam Code: ${currentTeamCode.toUpperCase()}\n\nDownload the app and enter this code to access our team data.`,
+        url: window.location.origin + window.location.pathname.replace('admin.html', 'index.html')
+    };
+    
+    if (navigator.share) {
+        navigator.share(shareData).catch(() => {});
+    } else {
+        // Fallback - copy share text
+        navigator.clipboard.writeText(shareData.text).then(() => {
+            showToast('Share text copied to clipboard!', 'success');
+        });
+    }
+}
+
+function toggleQRCode() {
+    const container = document.getElementById('qrContainer');
+    const isVisible = container.classList.toggle('visible');
+    
+    if (isVisible && !container.dataset.generated) {
+        new QRCode(document.getElementById('qrCode'), {
+            text: currentTeamCode.toUpperCase(),
+            width: 150,
+            height: 150
+        });
+        container.dataset.generated = 'true';
+    }
+}
+
+// Storage Management
+function calculateStorage() {
+    let totalSize = 0;
+    const breakdown = {};
+    
+    const categories = {
+        'Teams/Roster': ['teams', 'roster'],
+        'Game Data': ['pitches', 'games', 'currentGame'],
+        'Settings': ['settings', 'adminSettings', 'coaches', 'coachEmails'],
+        'Opponents': ['opponents', 'opponentPitchers', 'opponentBatters'],
+        'Scouting': ['scoutingReports'],
+        'Bullpen': ['bullpenSessions'],
+        'Other': []
+    };
+    
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key.startsWith(currentTeamCode + '_')) continue;
+        
+        const value = localStorage.getItem(key);
+        const size = (key.length + value.length) * 2; // UTF-16
+        totalSize += size;
+        
+        const shortKey = key.replace(currentTeamCode + '_', '');
+        let found = false;
+        
+        for (const [category, keys] of Object.entries(categories)) {
+            if (keys.some(k => shortKey.includes(k))) {
+                breakdown[category] = (breakdown[category] || 0) + size;
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            breakdown['Other'] = (breakdown['Other'] || 0) + size;
+        }
+    }
+    
+    // Update UI
+    const maxStorage = 5 * 1024 * 1024; // 5MB
+    const percentage = (totalSize / maxStorage) * 100;
+    
+    document.getElementById('storageFill').style.width = Math.min(percentage, 100) + '%';
+    if (percentage > 80) document.getElementById('storageFill').classList.add('high');
+    
+    document.getElementById('storageUsed').textContent = formatBytes(totalSize);
+    
+    // Breakdown
+    const breakdownEl = document.getElementById('dataBreakdown');
+    breakdownEl.innerHTML = Object.entries(breakdown)
+        .filter(([_, size]) => size > 0)
+        .sort((a, b) => b[1] - a[1])
+        .map(([category, size]) => `
+            <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #e2e8f0;">
+                <span>${category}</span>
+                <span style="color: #718096;">${formatBytes(size)}</span>
+            </div>
+        `).join('') || '<p style="color: #a0aec0;">No data stored yet</p>';
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+// Export All Data
+function exportAllData() {
+    const exportData = {
+        exportDate: new Date().toISOString(),
+        teamCode: currentTeamCode,
+        version: '2.0',
+        data: {}
+    };
+    
+    // Collect all team data
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(currentTeamCode + '_')) {
+            const shortKey = key.replace(currentTeamCode + '_', '');
+            try {
+                exportData.data[shortKey] = JSON.parse(localStorage.getItem(key));
+            } catch {
+                exportData.data[shortKey] = localStorage.getItem(key);
+            }
+        }
+    }
+    
+    const json = JSON.stringify(exportData, null, 2);
+    const filename = `${currentTeamCode}_backup_${new Date().toISOString().slice(0,10)}.json`;
+    downloadFile(json, filename, 'application/json');
+    showToast('Backup exported!', 'success');
+}
+
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Import Data
+let pendingImportData = null;
+
+function showImportDataModal() {
+    pendingImportData = null;
+    document.getElementById('jsonFileInput').value = '';
+    document.getElementById('replaceAllData').checked = false;
+    document.getElementById('importDataBtn').disabled = true;
+    document.getElementById('importDataModal').classList.add('visible');
+}
+
+function closeImportDataModal() {
+    document.getElementById('importDataModal').classList.remove('visible');
+    pendingImportData = null;
+}
+
+function handleJSONFile(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            pendingImportData = JSON.parse(e.target.result);
+            if (!pendingImportData.data) {
+                throw new Error('Invalid backup format');
+            }
+            document.getElementById('importDataBtn').disabled = false;
+            showToast('File loaded, ready to import', 'success');
+        } catch (err) {
+            showToast('Invalid backup file', 'error');
+            pendingImportData = null;
+        }
+    };
+    reader.readAsText(input.files[0]);
+}
+
+function importTeamData() {
+    if (!pendingImportData || !pendingImportData.data) {
+        showToast('No valid data to import', 'error');
+        return;
+    }
+    
+    const replaceAll = document.getElementById('replaceAllData').checked;
+    
+    if (replaceAll) {
+        // Clear existing team data
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith(currentTeamCode + '_')) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+    }
+    
+    // Import new data
+    let imported = 0;
+    for (const [key, value] of Object.entries(pendingImportData.data)) {
+        const fullKey = currentTeamCode + '_' + key;
+        const strValue = typeof value === 'string' ? value : JSON.stringify(value);
+        localStorage.setItem(fullKey, strValue);
+        imported++;
+    }
+    
+    closeImportDataModal();
+    loadAllData();
+    calculateStorage();
+    showToast(`Imported ${imported} data items!`, 'success');
+}
+
+// Danger Zone Actions
+let pendingConfirmAction = null;
+
+function confirmClearGames() {
+    showConfirmModal(
+        'Clear Game History',
+        'This will permanently delete all recorded games, pitch data, and statistics. This cannot be undone.',
+        'CLEAR GAMES',
+        () => {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(currentTeamCode + '_') && 
+                    (key.includes('game') || key.includes('pitch') || key.includes('Game'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            calculateStorage();
+            showToast('Game history cleared', 'success');
+        }
+    );
+}
+
+function confirmClearOpponents() {
+    showConfirmModal(
+        'Clear Opponent Data',
+        'This will permanently delete all opponent teams, scouting reports, and player data. This cannot be undone.',
+        'CLEAR OPPONENTS',
+        () => {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(currentTeamCode + '_') && 
+                    (key.includes('opponent') || key.includes('scouting') || key.includes('Opponent'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            calculateStorage();
+            showToast('Opponent data cleared', 'success');
+        }
+    );
+}
+
+function confirmResetTeam() {
+    showConfirmModal(
+        '⚠️ RESET ENTIRE TEAM',
+        `This will PERMANENTLY DELETE ALL DATA for team "${currentTeamCode}":\n\n• All games and pitch data\n• All opponents and scouting reports\n• All settings and roster\n• EVERYTHING\n\nThis CANNOT be undone!`,
+        currentTeamCode.toUpperCase(),
+        () => {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(currentTeamCode + '_')) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            localStorage.removeItem('scoutTrackerTeamCode');
+            showToast('Team reset complete', 'success');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        }
+    );
+}
+
+function showConfirmModal(title, message, confirmText, action) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    
+    if (confirmText) {
+        document.getElementById('confirmInputGroup').style.display = 'block';
+        document.getElementById('confirmInputLabel').textContent = `Type "${confirmText}" to confirm:`;
+        document.getElementById('confirmInput').value = '';
+        document.getElementById('confirmInput').placeholder = confirmText;
+    } else {
+        document.getElementById('confirmInputGroup').style.display = 'none';
+    }
+    
+    pendingConfirmAction = { action, confirmText };
+    document.getElementById('confirmModal').classList.add('visible');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('visible');
+    pendingConfirmAction = null;
+}
+
+function executeConfirmAction() {
+    if (!pendingConfirmAction) return;
+    
+    const { action, confirmText } = pendingConfirmAction;
+    
+    if (confirmText) {
+        const input = document.getElementById('confirmInput').value.trim().toUpperCase();
+        if (input !== confirmText.toUpperCase()) {
+            showToast('Confirmation text does not match', 'error');
+            return;
+        }
+    }
+    
+    closeConfirmModal();
+    action();
+}
+
+// Toast Notifications
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = { success: '✓', error: '✕', warning: '⚠' };
+    toast.innerHTML = `<span>${icons[type] || ''}</span> ${message}`;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideUp 0.3s ease-out reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Drag and Drop for file zones
+['csvDropZone', 'jsonDropZone'].forEach(id => {
+    const zone = document.getElementById(id);
+    if (!zone) return;
+    
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+    });
+    
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const input = zone.nextElementSibling;
+            if (input && input.type === 'file') {
+                // Create a new DataTransfer to set files
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                input.files = dt.files;
+                input.dispatchEvent(new Event('change'));
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>

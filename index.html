@@ -367,6 +367,15 @@
                 </div>
                 <div class="arrow">›</div>
             </a>
+            
+            <a href="admin.html" class="app-btn admin" id="adminBtn" style="display: none;">
+                <div class="icon" style="background: #f7fafc;">⚙️</div>
+                <div class="content">
+                    <div class="title">Team Admin</div>
+                    <div class="desc">Manage roster, coaches, settings, and data backups.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
         </div>
     </main>
     
@@ -383,17 +392,22 @@ function updateTeamDisplay() {
     const display = document.getElementById('teamDisplay');
     const inputRow = document.getElementById('teamInputRow');
     const changeRow = document.getElementById('teamChangeRow');
+    const adminBtn = document.getElementById('adminBtn');
     
     if (currentTeamCode) {
         display.textContent = currentTeamCode.toUpperCase();
         display.classList.remove('empty');
         inputRow.style.display = 'none';
         changeRow.style.display = 'flex';
+        // Show admin button when team is set
+        if (adminBtn) adminBtn.style.display = 'flex';
     } else {
         display.textContent = 'Not Set';
         display.classList.add('empty');
         inputRow.style.display = 'flex';
         changeRow.style.display = 'none';
+        // Hide admin button when no team
+        if (adminBtn) adminBtn.style.display = 'none';
     }
 }
 

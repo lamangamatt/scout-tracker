@@ -26,7 +26,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--primary);
+            background: var(--dark);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -34,115 +34,97 @@
             overflow-x: hidden;
         }
         
-        /* Baseball Field Background */
-        .field-bg {
+        /* Hero Background with Real Baseball Images */
+        .hero-bg {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             z-index: 0;
+        }
+        
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                url('https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=1600&q=80') center center / cover no-repeat;
+            filter: brightness(0.3);
+        }
+        
+        /* Overlay gradient for readability */
+        .hero-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                180deg,
+                rgba(26, 54, 93, 0.85) 0%,
+                rgba(26, 54, 93, 0.7) 30%,
+                rgba(26, 54, 93, 0.8) 70%,
+                rgba(26, 32, 44, 0.95) 100%
+            );
+        }
+        
+        /* Floating baseball images */
+        .floating-images {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
             overflow: hidden;
         }
         
-        .field-bg::before {
-            content: '';
+        .float-img {
             position: absolute;
-            top: -50%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200vmax;
-            height: 200vmax;
-            background: 
-                radial-gradient(ellipse at center, transparent 0%, transparent 30%, rgba(0,0,0,0.3) 100%),
-                linear-gradient(135deg, #2d5016 0%, #1e3a0f 50%, #152d0a 100%);
             border-radius: 50%;
+            opacity: 0.15;
+            filter: grayscale(30%);
         }
         
-        /* Diamond Shape */
-        .field-bg::after {
-            content: '';
-            position: absolute;
-            top: 15%;
-            left: 50%;
-            transform: translateX(-50%) rotate(45deg);
-            width: min(80vw, 300px);
-            height: min(80vw, 300px);
-            border: 3px solid rgba(255,255,255,0.15);
-            background: linear-gradient(135deg, rgba(139,90,43,0.3) 0%, rgba(101,67,33,0.2) 100%);
+        .float-img.img1 {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            right: -50px;
+            background: url('https://images.unsplash.com/photo-1508344928928-7165b0a39b59?w=400&q=80') center / cover;
+            animation: float1 8s ease-in-out infinite;
         }
         
-        /* Base paths */
-        .base-paths {
-            position: absolute;
-            top: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: min(80vw, 300px);
-            height: min(80vw, 300px);
-            z-index: 1;
+        .float-img.img2 {
+            width: 150px;
+            height: 150px;
+            top: 60%;
+            left: -30px;
+            background: url('https://images.unsplash.com/photo-1541746972996-4e0b0f43e02a?w=400&q=80') center / cover;
+            animation: float2 10s ease-in-out infinite;
+            border-radius: 20px;
         }
         
-        .base-paths::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(45deg);
-            width: 70%;
-            height: 70%;
-            border: 2px solid rgba(255,255,255,0.1);
+        .float-img.img3 {
+            width: 120px;
+            height: 120px;
+            bottom: 15%;
+            right: 10%;
+            background: url('https://images.unsplash.com/photo-1578432156882-ef66e3ee2db0?w=400&q=80') center / cover;
+            animation: float3 7s ease-in-out infinite;
+            border-radius: 16px;
         }
         
-        /* Bases */
-        .base {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: white;
-            transform: rotate(45deg);
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        @keyframes float1 {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
         }
         
-        .base.home {
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) rotate(45deg);
-            width: 14px;
-            height: 14px;
-            background: white;
+        @keyframes float2 {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(15px) rotate(-3deg); }
         }
         
-        .base.first {
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%) rotate(45deg);
-        }
-        
-        .base.second {
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%) rotate(45deg);
-        }
-        
-        .base.third {
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%) rotate(45deg);
-        }
-        
-        /* Grass pattern overlay */
-        .grass-pattern {
-            position: absolute;
-            inset: 0;
-            background-image: repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 50px,
-                rgba(255,255,255,0.02) 50px,
-                rgba(255,255,255,0.02) 100px
-            );
-            opacity: 0.5;
+        @keyframes float3 {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
         }
         
         /* Content */
@@ -164,33 +146,42 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 90px;
-            height: 90px;
+            width: 100px;
+            height: 100px;
             background: linear-gradient(145deg, #ffffff 0%, #e2e8f0 100%);
-            border-radius: 24px;
-            margin-bottom: 16px;
+            border-radius: 28px;
+            margin-bottom: 20px;
             box-shadow: 
-                0 10px 40px rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.8);
+                0 15px 50px rgba(0,0,0,0.4),
+                0 5px 15px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+            animation: float-logo 4s ease-in-out infinite;
+        }
+        
+        @keyframes float-logo {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
         
         .logo-container svg {
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
         
         .header h1 {
-            font-size: 2.2em;
+            font-size: 2.4em;
             font-weight: 800;
             margin-bottom: 8px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            text-shadow: 0 3px 15px rgba(0,0,0,0.4);
             letter-spacing: -0.5px;
         }
         
         .header p {
-            font-size: 1em;
+            font-size: 1.05em;
             opacity: 0.9;
-            text-shadow: 0 1px 5px rgba(0,0,0,0.2);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-weight: 500;
         }
         
         .container {
@@ -203,98 +194,102 @@
         
         /* Team Code Section */
         .team-section {
-            background: rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.1);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 24px;
+            border-radius: 24px;
+            padding: 28px;
             margin-bottom: 28px;
             text-align: center;
             color: white;
             border: 1px solid rgba(255,255,255,0.15);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            box-shadow: 
+                0 10px 40px rgba(0,0,0,0.25),
+                inset 0 1px 0 rgba(255,255,255,0.1);
         }
         
         .team-section .label {
-            font-size: 0.8em;
+            font-size: 0.75em;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             opacity: 0.7;
-            margin-bottom: 10px;
-            font-weight: 600;
+            margin-bottom: 12px;
+            font-weight: 700;
         }
         
         .team-code-display {
-            font-size: 1.6em;
+            font-size: 1.7em;
             font-weight: 800;
-            padding: 14px 24px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 12px;
+            padding: 16px 28px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 16px;
             display: inline-block;
-            margin-bottom: 12px;
-            min-width: 160px;
-            letter-spacing: 2px;
+            margin-bottom: 14px;
+            min-width: 180px;
+            letter-spacing: 3px;
             border: 1px solid rgba(255,255,255,0.1);
         }
         
         .team-code-display.empty {
             color: rgba(255,255,255,0.4);
             font-style: italic;
-            font-weight: 400;
+            font-weight: 500;
             letter-spacing: 0;
+            font-size: 1.1em;
         }
         
         .team-input-row {
             display: flex;
-            gap: 10px;
-            margin-top: 14px;
+            gap: 12px;
+            margin-top: 16px;
         }
         
         .team-input {
             flex: 1;
-            padding: 14px 18px;
-            border: 2px solid rgba(255,255,255,0.25);
-            border-radius: 12px;
-            background: rgba(255,255,255,0.1);
+            padding: 16px 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.08);
             color: white;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 600;
             text-align: center;
             letter-spacing: 1px;
+            transition: all 0.2s;
         }
         
         .team-input::placeholder {
             color: rgba(255,255,255,0.4);
-            font-weight: 400;
+            font-weight: 500;
             letter-spacing: 0;
         }
         
         .team-input:focus {
             outline: none;
             border-color: rgba(255,255,255,0.5);
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.12);
         }
         
         .team-btn {
-            padding: 14px 24px;
+            padding: 16px 28px;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             background: linear-gradient(145deg, #ffffff 0%, #e2e8f0 100%);
             color: var(--primary);
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            transition: all 0.2s;
         }
         
         .team-btn:active {
             transform: scale(0.97);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
         }
         
         .team-btn.secondary {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.12);
             color: white;
             border: 1px solid rgba(255,255,255,0.2);
             box-shadow: none;
@@ -311,30 +306,30 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            padding: 18px 20px;
-            background: linear-gradient(145deg, #ffffff 0%, #f7fafc 100%);
-            border-radius: 16px;
+            padding: 20px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.97) 0%, rgba(247,250,252,0.95) 100%);
+            border-radius: 20px;
             text-decoration: none;
             color: var(--dark);
             box-shadow: 
-                0 4px 20px rgba(0,0,0,0.15),
-                0 1px 3px rgba(0,0,0,0.1);
+                0 8px 30px rgba(0,0,0,0.2),
+                0 2px 4px rgba(0,0,0,0.1);
             transition: transform 0.2s, box-shadow 0.2s;
-            border: 1px solid rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.9);
         }
         
         .app-btn:active {
             transform: scale(0.98);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
         
         .app-btn .icon {
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 14px;
+            border-radius: 16px;
             flex-shrink: 0;
         }
         
@@ -343,15 +338,15 @@
             height: 28px;
         }
         
-        .app-btn.entry .icon { background: linear-gradient(145deg, #ebf8ff 0%, #bee3f8 100%); }
-        .app-btn.coach .icon { background: linear-gradient(145deg, #f0fff4 0%, #c6f6d5 100%); }
-        .app-btn.bullpen .icon { background: linear-gradient(145deg, #faf5ff 0%, #e9d8fd 100%); }
-        .app-btn.history .icon { background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%); }
-        .app-btn.opponents .icon { background: linear-gradient(145deg, #fff5f5 0%, #fed7d7 100%); }
-        .app-btn.scouting .icon { background: linear-gradient(145deg, #f5f3ff 0%, #ddd6fe 100%); }
-        .app-btn.stats .icon { background: linear-gradient(145deg, #ecfdf5 0%, #a7f3d0 100%); }
-        .app-btn.admin .icon { background: linear-gradient(145deg, #f7fafc 0%, #e2e8f0 100%); }
-        .app-btn.guide .icon { background: linear-gradient(145deg, #eff6ff 0%, #bfdbfe 100%); }
+        .app-btn.entry .icon { background: linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%); }
+        .app-btn.coach .icon { background: linear-gradient(145deg, #dcfce7 0%, #bbf7d0 100%); }
+        .app-btn.bullpen .icon { background: linear-gradient(145deg, #f3e8ff 0%, #e9d5ff 100%); }
+        .app-btn.history .icon { background: linear-gradient(145deg, #fef3c7 0%, #fde68a 100%); }
+        .app-btn.opponents .icon { background: linear-gradient(145deg, #fee2e2 0%, #fecaca 100%); }
+        .app-btn.scouting .icon { background: linear-gradient(145deg, #ede9fe 0%, #ddd6fe 100%); }
+        .app-btn.stats .icon { background: linear-gradient(145deg, #d1fae5 0%, #a7f3d0 100%); }
+        .app-btn.admin .icon { background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%); }
+        .app-btn.guide .icon { background: linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%); }
         
         .app-btn .content {
             flex: 1;
@@ -359,35 +354,40 @@
         }
         
         .app-btn .title {
-            font-size: 1.1em;
+            font-size: 1.15em;
             font-weight: 700;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
             color: var(--dark);
         }
         
         .app-btn .desc {
-            font-size: 0.82em;
+            font-size: 0.85em;
             color: var(--gray);
             line-height: 1.4;
         }
         
         .app-btn .arrow {
-            font-size: 1.3em;
-            color: #cbd5e0;
+            font-size: 1.4em;
+            color: #cbd5e1;
             font-weight: 300;
         }
         
         /* Footer */
         .footer {
-            padding: 24px 20px;
+            padding: 30px 20px;
             text-align: center;
             color: rgba(255,255,255,0.5);
             font-size: 0.85em;
         }
         
+        .footer p {
+            margin-bottom: 4px;
+        }
+        
         .footer a {
             color: rgba(255,255,255,0.7);
             text-decoration: none;
+            transition: color 0.2s;
         }
         
         .footer a:hover {
@@ -399,7 +399,7 @@
             display: none;
             background: linear-gradient(90deg, var(--warning) 0%, #f6ad55 100%);
             color: white;
-            padding: 12px;
+            padding: 14px;
             text-align: center;
             font-size: 0.9em;
             font-weight: 600;
@@ -412,10 +412,10 @@
         /* Install Prompt */
         .install-prompt {
             display: none;
-            background: rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 16px;
+            padding: 18px;
             margin-bottom: 20px;
             text-align: center;
             color: white;
@@ -427,42 +427,36 @@
         }
         
         .install-prompt p {
-            margin-bottom: 12px;
-            font-size: 0.9em;
+            margin-bottom: 14px;
+            font-size: 0.95em;
         }
         
         .install-btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             background: white;
             color: var(--primary);
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
         }
         
-        /* Animations */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-        
-        .logo-container {
-            animation: float 4s ease-in-out infinite;
+        /* Hide floating images on small screens */
+        @media (max-width: 600px) {
+            .float-img { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- Baseball Field Background -->
-    <div class="field-bg">
-        <div class="grass-pattern"></div>
-        <div class="base-paths">
-            <div class="base home"></div>
-            <div class="base first"></div>
-            <div class="base second"></div>
-            <div class="base third"></div>
-        </div>
+    <!-- Hero Background -->
+    <div class="hero-bg"></div>
+    
+    <!-- Floating Baseball Images -->
+    <div class="floating-images">
+        <div class="float-img img1"></div>
+        <div class="float-img img2"></div>
+        <div class="float-img img3"></div>
     </div>
     
     <div class="offline-banner" id="offlineBanner">
@@ -510,7 +504,7 @@
             <div class="app-buttons">
                 <a href="entry.html" class="app-btn entry">
                     <div class="icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#3182ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 20h9"/>
                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                         </svg>
@@ -524,7 +518,7 @@
                 
                 <a href="coach.html" class="app-btn coach">
                     <div class="icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"/>
                             <line x1="12" y1="20" x2="12" y2="4"/>
                             <line x1="6" y1="20" x2="6" y2="14"/>
@@ -539,7 +533,7 @@
                 
                 <a href="bullpen.html" class="app-btn bullpen">
                     <div class="icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#805ad5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/>
                             <circle cx="12" cy="12" r="3"/>
                             <line x1="12" y1="2" x2="12" y2="5"/>
@@ -557,7 +551,7 @@
                 
                 <a href="history.html" class="app-btn history">
                     <div class="icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#d69e2e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/>
                             <polyline points="12 6 12 12 16 14"/>
                         </svg>
@@ -571,7 +565,7 @@
                 
                 <a href="opponents.html" class="app-btn opponents">
                     <div class="icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#c53030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8"/>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
@@ -585,7 +579,7 @@
                 
                 <a href="scouting.html" class="app-btn scouting">
                     <div class="icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b46c1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                             <polyline points="14 2 14 8 20 8"/>
                             <line x1="16" y1="13" x2="8" y2="13"/>
@@ -616,7 +610,7 @@
             
                 <a href="admin.html" class="app-btn admin" id="adminBtn" style="display: none;">
                     <div class="icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"/>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                         </svg>
@@ -646,8 +640,8 @@
         </main>
         
         <footer class="footer">
-            <p>Scout Tracker v2.0</p>
-            <p>Data syncs across devices with the same team code</p>
+            <p><strong>Scout Tracker</strong> v2.0</p>
+            <p>Real-time sync across all devices</p>
             <p style="margin-top: 12px;"><a href="guide.html">📖 User Guide</a></p>
         </footer>
     </div>

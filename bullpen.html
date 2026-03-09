@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icons/icon.svg">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --primary: #1a365d;
@@ -656,6 +658,29 @@ assistant@school.edu"></textarea>
     </div>
 
 <script>
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBLlrhlmjhc4AUfrBPdo4NngH9kQfQTVIc",
+    authDomain: "scout-tracker-a371c.firebaseapp.com",
+    databaseURL: "https://scout-tracker-a371c-default-rtdb.firebaseio.com",
+    projectId: "scout-tracker-a371c",
+    storageBucket: "scout-tracker-a371c.firebasestorage.app",
+    messagingSenderId: "248042846667",
+    appId: "1:248042846667:web:fd6b5afbfb9b3d95329e4e"
+};
+
+let db = null;
+let useFirebase = false;
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    useFirebase = true;
+    console.log('Firebase connected');
+} catch (e) {
+    console.log('Firebase not available, using localStorage only');
+}
+
 // Team Code Management
 let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
 
@@ -724,6 +749,28 @@ let state = {
 // Load data
 function loadData() {
     if (!currentTeamCode) return;
+    
+    // Try Firebase first
+    if (useFirebase) {
+        db.ref(getFirebasePath('bullpenTracker')).once('value').then((snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                state.pitchers = data.pitchers || [];
+                state.sessions = data.sessions || [];
+                state.settings = data.settings || { coachEmails: [], teamName: '' };
+            }
+            updatePitcherDropdowns();
+            renderSessionsList();
+        }).catch((error) => {
+            console.error('Firebase load error:', error);
+            loadFromLocalStorage();
+        });
+    } else {
+        loadFromLocalStorage();
+    }
+}
+
+function loadFromLocalStorage() {
     const saved = localStorage.getItem(getStorageKey('bullpenTracker'));
     if (saved) {
         const data = JSON.parse(saved);
@@ -737,11 +784,22 @@ function loadData() {
 
 function saveData() {
     if (!currentTeamCode) return;
-    localStorage.setItem(getStorageKey('bullpenTracker'), JSON.stringify({
+    
+    const data = {
         pitchers: state.pitchers,
         sessions: state.sessions,
         settings: state.settings
-    }));
+    };
+    
+    // Save to localStorage
+    localStorage.setItem(getStorageKey('bullpenTracker'), JSON.stringify(data));
+    
+    // Sync to Firebase
+    if (useFirebase) {
+        db.ref(getFirebasePath('bullpenTracker')).set(data).catch((error) => {
+            console.error('Firebase save error:', error);
+        });
+    }
 }
 
 // Tabs

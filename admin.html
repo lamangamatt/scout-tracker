@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --primary: #1a365d;
@@ -928,6 +930,29 @@
     </div>
 
 <script>
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBLlrhlmjhc4AUfrBPdo4NngH9kQfQTVIc",
+    authDomain: "scout-tracker-a371c.firebaseapp.com",
+    databaseURL: "https://scout-tracker-a371c-default-rtdb.firebaseio.com",
+    projectId: "scout-tracker-a371c",
+    storageBucket: "scout-tracker-a371c.firebasestorage.app",
+    messagingSenderId: "248042846667",
+    appId: "1:248042846667:web:fd6b5afbfb9b3d95329e4e"
+};
+
+let db = null;
+let useFirebase = false;
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    useFirebase = true;
+    console.log('Firebase connected');
+} catch (e) {
+    console.log('Firebase not available, using localStorage only');
+}
+
 // QR Code library (simple implementation)
 class QRCode {
     constructor(el, options) {
@@ -960,6 +985,17 @@ let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
 
 function getStorageKey(key) {
     return currentTeamCode + '_' + key;
+}
+
+function getFirebasePath(path) {
+    return 'teams/' + currentTeamCode + '/' + path;
+}
+
+function syncToFirebase(key, data) {
+    if (!useFirebase || !currentTeamCode) return;
+    db.ref(getFirebasePath(key)).set(data).catch((error) => {
+        console.error('Firebase sync error:', error);
+    });
 }
 
 // Initialize
@@ -1084,11 +1120,13 @@ function saveTeamSettings() {
     teamData.settings.secondaryColor = document.getElementById('secondaryColor').value;
     
     localStorage.setItem(getStorageKey('adminSettings'), JSON.stringify(teamData.settings));
+    syncToFirebase('adminSettings', teamData.settings);
     
     // Also update old settings format for compatibility
     const oldSettings = JSON.parse(localStorage.getItem(getStorageKey('settings')) || '{}');
     oldSettings.yourTeamName = teamData.settings.teamName;
     localStorage.setItem(getStorageKey('settings'), JSON.stringify(oldSettings));
+    syncToFirebase('settings', oldSettings);
     
     showToast('Team settings saved!', 'success');
 }
@@ -1099,6 +1137,7 @@ function savePitchLimits() {
     teamData.settings.pitchAlertSound = document.getElementById('pitchAlertSound').checked;
     
     localStorage.setItem(getStorageKey('adminSettings'), JSON.stringify(teamData.settings));
+    syncToFirebase('adminSettings', teamData.settings);
     
     // Also update old settings format for compatibility
     const oldSettings = JSON.parse(localStorage.getItem(getStorageKey('settings')) || '{}');
@@ -1106,6 +1145,7 @@ function savePitchLimits() {
     oldSettings.warningPitchCount = teamData.settings.warningPitchCount;
     oldSettings.pitchAlertSound = teamData.settings.pitchAlertSound;
     localStorage.setItem(getStorageKey('settings'), JSON.stringify(oldSettings));
+    syncToFirebase('settings', oldSettings);
     
     showToast('Pitch limits saved!', 'success');
 }
@@ -1296,6 +1336,7 @@ function deletePlayer(index) {
 
 function saveRoster() {
     localStorage.setItem(getStorageKey('roster'), JSON.stringify(teamData.roster));
+    syncToFirebase('roster', teamData.roster);
     
     // Also update old teams format for compatibility with entry.html
     const savedTeams = JSON.parse(localStorage.getItem(getStorageKey('teams')) || '{}');
@@ -1308,6 +1349,7 @@ function saveRoster() {
         throws: p.throws
     }));
     localStorage.setItem(getStorageKey('teams'), JSON.stringify(savedTeams));
+    syncToFirebase('teams', savedTeams);
 }
 
 // Roster Import/Export
@@ -1508,6 +1550,7 @@ function deleteCoach(index) {
 
 function saveCoaches() {
     localStorage.setItem(getStorageKey('coaches'), JSON.stringify(teamData.coaches));
+    syncToFirebase('coaches', teamData.coaches);
     
     // Also update old format for compatibility
     const emails = teamData.coaches.map(c => c.email).join('\n');

@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icons/icon.svg">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --primary: #1a365d;
@@ -520,6 +522,29 @@
 </div>
 
 <script>
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBLlrhlmjhc4AUfrBPdo4NngH9kQfQTVIc",
+    authDomain: "scout-tracker-a371c.firebaseapp.com",
+    databaseURL: "https://scout-tracker-a371c-default-rtdb.firebaseio.com",
+    projectId: "scout-tracker-a371c",
+    storageBucket: "scout-tracker-a371c.firebasestorage.app",
+    messagingSenderId: "248042846667",
+    appId: "1:248042846667:web:fd6b5afbfb9b3d95329e4e"
+};
+
+let db = null;
+let useFirebase = false;
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    useFirebase = true;
+    console.log('Firebase connected');
+} catch (e) {
+    console.log('Firebase not available, using localStorage only');
+}
+
 // Team Code Management
 let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
 
@@ -589,8 +614,51 @@ let pitcherStats = {
 };
 
 // Poll localStorage for updates (since we can't use Firebase without setup)
+let firebaseListenerActive = false;
+
+function setupFirebaseListener() {
+    if (!useFirebase || !currentTeamCode || firebaseListenerActive) return;
+    
+    const ref = db.ref(getFirebasePath('scoutTrackerState'));
+    ref.on('value', (snapshot) => {
+        const state = snapshot.val();
+        if (state) {
+            if (state.pitches && state.pitches.length !== gameState.pitches.length) {
+                gameState = state;
+                updateDisplay();
+                analyzePitcher();
+                generatePrediction();
+                generateInsights();
+            }
+            
+            document.getElementById('balls').textContent = state.balls || 0;
+            document.getElementById('strikes').textContent = state.strikes || 0;
+            document.getElementById('outs').textContent = state.outs || 0;
+            document.getElementById('inning').textContent = state.inning || 1;
+            document.getElementById('totalPitches').textContent = state.totalPitches || 0;
+            
+            document.getElementById('syncText').textContent = 'Live';
+            document.getElementById('syncDot').style.background = '#38a169';
+        }
+    }, (error) => {
+        console.error('Firebase listener error:', error);
+        document.getElementById('syncText').textContent = 'Offline';
+        document.getElementById('syncDot').style.background = '#e53e3e';
+    });
+    
+    firebaseListenerActive = true;
+    console.log('Firebase real-time listener active');
+}
+
 function pollForUpdates() {
     if (!currentTeamCode) return;
+    
+    // Try Firebase real-time listener first
+    if (useFirebase && !firebaseListenerActive) {
+        setupFirebaseListener();
+    }
+    
+    // Also check localStorage as fallback/offline support
     const saved = localStorage.getItem(getStorageKey('scoutTrackerState'));
     if (saved) {
         try {
@@ -610,8 +678,10 @@ function pollForUpdates() {
             document.getElementById('inning').textContent = state.inning || 1;
             document.getElementById('totalPitches').textContent = state.totalPitches || 0;
             
-            document.getElementById('syncText').textContent = 'Connected';
-            document.getElementById('syncDot').style.background = '#38a169';
+            if (!useFirebase) {
+                document.getElementById('syncText').textContent = 'Local';
+                document.getElementById('syncDot').style.background = '#d69e2e';
+            }
         } catch (e) {
             console.error('Error parsing state:', e);
         }

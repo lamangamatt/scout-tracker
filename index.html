@@ -11,219 +11,311 @@
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <style>
         :root {
-            --primary: #1a365d;
-            --accent: #e53e3e;
-            --success: #38a169;
-            --warning: #d69e2e;
-            --light: #f7fafc;
-            --dark: #2d3748;
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --accent: #dc2626;
+            --accent-light: #ef4444;
+            --success: #22c55e;
+            --warning: #eab308;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --gray: #64748b;
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--primary) 0%, #2c5282 100%);
+            background: var(--dark);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            color: white;
         }
         
-        .header {
-            padding: 40px 20px 20px;
+        /* Hero Section with Baseball Image */
+        .hero {
+            position: relative;
+            padding: 60px 20px 40px;
             text-align: center;
-            color: white;
+            overflow: hidden;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('https://images.unsplash.com/photo-1529768167801-9173d94c2a42?w=1600&q=80') center center / cover no-repeat;
+            opacity: 0.3;
+        }
+        
+        /* Baseball stitching decoration */
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: var(--light);
+            clip-path: ellipse(55% 100% at 50% 100%);
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
         }
         
         .logo {
-            font-size: 4em;
-            margin-bottom: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 110px;
+            height: 110px;
+            background: white;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            box-shadow: 
+                0 0 0 4px var(--accent),
+                0 20px 50px rgba(0,0,0,0.5);
         }
         
-        .header h1 {
-            font-size: 2em;
-            font-weight: 700;
+        .logo svg {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .hero h1 {
+            font-size: 2.5em;
+            font-weight: 800;
             margin-bottom: 8px;
+            letter-spacing: -1px;
         }
         
-        .header p {
-            font-size: 1em;
-            opacity: 0.85;
+        .hero p {
+            font-size: 1.1em;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+        
+        /* Main Content */
+        .main {
+            background: var(--light);
+            min-height: calc(100vh - 300px);
+            padding: 30px 20px 40px;
         }
         
         .container {
-            flex: 1;
-            padding: 20px;
             max-width: 500px;
             margin: 0 auto;
-            width: 100%;
         }
         
         /* Team Code Section */
-        .team-section {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 20px;
+        .team-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
             margin-bottom: 24px;
             text-align: center;
-            color: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
         }
         
-        .team-section .label {
-            font-size: 0.85em;
-            opacity: 0.8;
-            margin-bottom: 8px;
+        .team-card .label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--gray);
+            margin-bottom: 12px;
+            font-weight: 700;
         }
         
         .team-code-display {
-            font-size: 1.5em;
-            font-weight: 700;
-            padding: 12px 20px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 8px;
+            font-size: 1.8em;
+            font-weight: 800;
+            padding: 14px 24px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
             display: inline-block;
-            margin-bottom: 12px;
-            min-width: 150px;
+            margin-bottom: 14px;
+            min-width: 180px;
+            letter-spacing: 2px;
         }
         
         .team-code-display.empty {
-            color: rgba(255,255,255,0.5);
+            background: #f1f5f9;
+            color: #94a3b8;
             font-style: italic;
-            font-weight: 400;
+            font-weight: 500;
+            letter-spacing: 0;
+            font-size: 1.1em;
         }
         
         .team-input-row {
             display: flex;
-            gap: 8px;
-            margin-top: 12px;
+            gap: 10px;
+            margin-top: 16px;
         }
         
         .team-input {
             flex: 1;
-            padding: 12px 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            font-size: 16px;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            color: var(--dark);
+            font-size: 17px;
+            font-weight: 600;
             text-align: center;
-        }
-        
-        .team-input::placeholder {
-            color: rgba(255,255,255,0.5);
+            transition: all 0.2s;
         }
         
         .team-input:focus {
             outline: none;
-            border-color: white;
-            background: rgba(255,255,255,0.2);
-        }
-        
-        .team-btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
+            border-color: var(--primary);
             background: white;
-            color: var(--primary);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
         }
         
-        .team-btn:active {
-            transform: scale(0.98);
-        }
-        
-        .team-btn.secondary {
-            background: rgba(255,255,255,0.2);
+        .btn {
+            padding: 16px 28px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent);
             color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
         }
         
-        /* App Buttons */
-        .app-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+        .btn:active {
+            transform: scale(0.97);
+        }
+        
+        .btn.secondary {
+            background: #f1f5f9;
+            color: var(--gray);
+        }
+        
+        /* Section Title */
+        .section-title {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--gray);
+            margin-bottom: 16px;
+            font-weight: 700;
+            padding-left: 4px;
+        }
+        
+        /* App Buttons Grid */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
         }
         
         .app-btn {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 16px;
-            padding: 20px;
+            padding: 24px 16px;
             background: white;
             border-radius: 16px;
             text-decoration: none;
             color: var(--dark);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            text-align: center;
         }
         
         .app-btn:active {
-            transform: scale(0.98);
+            transform: scale(0.97);
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
         }
         
         .app-btn .icon {
-            font-size: 2.5em;
-            width: 60px;
-            height: 60px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
+            border-radius: 16px;
+            margin-bottom: 12px;
         }
         
-        .app-btn.entry .icon { background: #ebf8ff; }
-        .app-btn.coach .icon { background: #f0fff4; }
-        .app-btn.bullpen .icon { background: #faf5ff; }
-        .app-btn.history .icon { background: #fffbeb; }
-        .app-btn.opponents .icon { background: #fed7e2; }
-        .app-btn.scouting .icon { background: #e9d8fd; }
-        .app-btn.stats .icon { background: #c6f6d5; }
-        
-        .app-btn .content {
-            flex: 1;
+        .app-btn .icon svg {
+            width: 28px;
+            height: 28px;
         }
+        
+        .app-btn.entry .icon { background: #dbeafe; }
+        .app-btn.coach .icon { background: #dcfce7; }
+        .app-btn.bullpen .icon { background: #f3e8ff; }
+        .app-btn.history .icon { background: #fef3c7; }
+        .app-btn.opponents .icon { background: #fee2e2; }
+        .app-btn.scouting .icon { background: #ede9fe; }
+        .app-btn.stats .icon { background: #d1fae5; }
+        .app-btn.admin .icon { background: #f1f5f9; }
+        .app-btn.guide .icon { background: #e0f2fe; }
         
         .app-btn .title {
-            font-size: 1.2em;
+            font-size: 0.95em;
             font-weight: 700;
             margin-bottom: 4px;
+            color: var(--dark);
         }
         
         .app-btn .desc {
-            font-size: 0.85em;
-            color: #718096;
-            line-height: 1.4;
+            font-size: 0.75em;
+            color: var(--gray);
+            line-height: 1.3;
         }
         
-        .app-btn .arrow {
-            font-size: 1.5em;
-            color: #a0aec0;
+        /* Full-width buttons for less common actions */
+        .app-btn.full {
+            grid-column: span 2;
+            flex-direction: row;
+            padding: 18px 20px;
+            text-align: left;
+            gap: 14px;
+        }
+        
+        .app-btn.full .icon {
+            margin-bottom: 0;
+            width: 48px;
+            height: 48px;
+        }
+        
+        .app-btn.full .content {
+            flex: 1;
         }
         
         /* Footer */
         .footer {
+            background: var(--light);
             padding: 20px;
             text-align: center;
-            color: rgba(255,255,255,0.6);
+            color: var(--gray);
             font-size: 0.85em;
         }
         
         .footer a {
-            color: rgba(255,255,255,0.8);
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
         }
         
         /* Offline Banner */
         .offline-banner {
             display: none;
             background: var(--warning);
-            color: white;
-            padding: 10px;
+            color: var(--dark);
+            padding: 12px;
             text-align: center;
             font-size: 0.9em;
-            font-weight: 500;
+            font-weight: 600;
         }
         
         .offline-banner.visible {
@@ -233,12 +325,12 @@
         /* Install Prompt */
         .install-prompt {
             display: none;
-            background: rgba(255,255,255,0.15);
-            border-radius: 12px;
-            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border-radius: 16px;
+            padding: 18px;
             margin-bottom: 20px;
             text-align: center;
-            color: white;
         }
         
         .install-prompt.visible {
@@ -247,155 +339,191 @@
         
         .install-prompt p {
             margin-bottom: 12px;
-            font-size: 0.9em;
+            font-size: 0.95em;
         }
         
-        .install-prompt button {
-            padding: 10px 24px;
+        .install-btn {
+            padding: 12px 24px;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin: 0 4px;
-        }
-        
-        .install-prompt .install-btn {
+            border-radius: 10px;
             background: white;
             color: var(--primary);
-        }
-        
-        .install-prompt .dismiss-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="offline-banner" id="offlineBanner">
-        ⚠️ You're offline - data is saved locally
+        📴 You're offline — data will sync when connected
     </div>
     
-    <header class="header">
-        <div class="logo">⚾</div>
-        <h1>Scout Tracker</h1>
-        <p>Real-time pitch tracking & analytics</p>
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <div class="logo">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="46" fill="#FEFEFE" stroke="#dc2626" stroke-width="4"/>
+                    <path d="M24 18C36 35 36 65 24 82" stroke="#dc2626" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <path d="M76 18C64 35 64 65 76 82" stroke="#dc2626" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <path d="M26 24L20 27M27 33L21 36M27 42L21 45M27 51L21 54M27 60L21 63M27 69L21 72M26 78L20 81" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M74 24L80 27M73 33L79 36M73 42L79 45M73 51L79 54M73 60L79 63M73 69L79 72M74 78L80 81" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h1>Scout Tracker</h1>
+            <p>Baseball Analytics & Pitch Tracking</p>
+        </div>
     </header>
     
-    <main class="container">
-        <!-- Install Prompt -->
-        <div class="install-prompt" id="installPrompt">
-            <p>📱 Install Scout Tracker for quick access</p>
-            <button class="install-btn" onclick="installApp()">Add to Home Screen</button>
-            <button class="dismiss-btn" onclick="dismissInstall()">Later</button>
-        </div>
-        
-        <!-- Team Code Section -->
-        <div class="team-section">
-            <div class="label">Your Team</div>
-            <div class="team-code-display" id="teamDisplay">Not Set</div>
-            <div class="team-input-row" id="teamInputRow">
-                <input type="text" class="team-input" id="teamInput" placeholder="Enter team code..." autocapitalize="none" autocorrect="off">
-                <button class="team-btn" onclick="setTeamCode()">Set</button>
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <div class="install-prompt" id="installPrompt">
+                <p>📱 Install Scout Tracker for quick access</p>
+                <button class="install-btn" onclick="installApp()">Add to Home Screen</button>
             </div>
-            <div class="team-input-row" id="teamChangeRow" style="display: none;">
-                <button class="team-btn secondary" onclick="showTeamInput()">Change Team</button>
+            
+            <div class="team-card">
+                <div class="label">Your Team</div>
+                <div class="team-code-display empty" id="teamDisplay">Not Set</div>
+                
+                <div class="team-input-row" id="teamInputRow">
+                    <input type="text" class="team-input" id="teamCodeInput" placeholder="Enter team code" autocomplete="off" autocapitalize="none">
+                    <button class="btn" onclick="setTeamCode()">Join</button>
+                </div>
+                
+                <div class="team-input-row" id="teamChangeRow" style="display: none;">
+                    <button class="btn secondary" onclick="switchTeam()">Switch Team</button>
+                </div>
             </div>
-        </div>
-        
-        <!-- App Buttons -->
-        <div class="app-buttons">
-            <a href="entry.html" class="app-btn entry">
-                <div class="icon">📝</div>
-                <div class="content">
+            
+            <div class="section-title">Game Day</div>
+            <div class="app-grid">
+                <a href="entry.html" class="app-btn entry">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                        </svg>
+                    </div>
                     <div class="title">Data Entry</div>
-                    <div class="desc">Log pitches in real-time during games. Track pitch type, location, and results.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            
-            <a href="coach.html" class="app-btn coach">
-                <div class="icon">📊</div>
-                <div class="content">
+                    <div class="desc">Log pitches live</div>
+                </a>
+                
+                <a href="coach.html" class="app-btn coach">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                    </div>
                     <div class="title">Coach View</div>
-                    <div class="desc">Live dashboard with pitch predictions, tendencies, and actionable insights.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
+                    <div class="desc">Live dashboard</div>
+                </a>
+                
+                <a href="bullpen.html" class="app-btn bullpen">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+                    <div class="title">Bullpen</div>
+                    <div class="desc">Practice sessions</div>
+                </a>
+                
+                <a href="scouting.html" class="app-btn scouting">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                    </div>
+                    <div class="title">Scouting</div>
+                    <div class="desc">Pre-game report</div>
+                </a>
+            </div>
             
-            <a href="bullpen.html" class="app-btn bullpen">
-                <div class="icon">🎯</div>
-                <div class="content">
-                    <div class="title">Bullpen Tracker</div>
-                    <div class="desc">Track bullpen sessions with velocity, pitch types, and command ratings.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
+            <div class="section-title" style="margin-top: 24px;">Analysis</div>
+            <div class="app-grid">
+                <a href="stats.html" class="app-btn stats">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                            <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                        </svg>
+                    </div>
+                    <div class="title">Stats</div>
+                    <div class="desc">Season analytics</div>
+                </a>
+                
+                <a href="history.html" class="app-btn history">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <div class="title">History</div>
+                    <div class="desc">Past games</div>
+                </a>
+                
+                <a href="opponents.html" class="app-btn opponents full">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </div>
+                    <div class="content">
+                        <div class="title">Opponent Database</div>
+                        <div class="desc">Build scouting profiles on teams you'll face</div>
+                    </div>
+                </a>
+            </div>
             
-            <a href="history.html" class="app-btn history">
-                <div class="icon">📜</div>
-                <div class="content">
-                    <div class="title">Game History</div>
-                    <div class="desc">View past games, pitch logs, pitcher stats, and detailed breakdowns.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            
-            <a href="opponents.html" class="app-btn opponents">
-                <div class="icon">🔍</div>
-                <div class="content">
-                    <div class="title">Opponents</div>
-                    <div class="desc">Track opponent teams, batters, pitchers, and their tendencies.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            
-            <a href="scouting.html" class="app-btn scouting">
-                <div class="icon">📋</div>
-                <div class="content">
-                    <div class="title">Scouting Report</div>
-                    <div class="desc">Pre-game scouting reports. View and share opponent analysis.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            
-            <a href="stats.html" class="app-btn stats">
-                <div class="icon">📊</div>
-                <div class="content">
-                    <div class="title">Stats Dashboard</div>
-                    <div class="desc">Comprehensive batting and pitching stats. Charts and trends.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            
-            <a href="admin.html" class="app-btn admin" id="adminBtn" style="display: none;">
-                <div class="icon" style="background: #f7fafc;">⚙️</div>
-                <div class="content">
-                    <div class="title">Team Admin</div>
-                    <div class="desc">Manage roster, coaches, settings, and data backups.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            
-            <a href="guide.html" class="app-btn guide">
-                <div class="icon" style="background: #ebf8ff;">❓</div>
-                <div class="content">
-                    <div class="title">User Guide</div>
-                    <div class="desc">Complete documentation for all features and how to use them.</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
+            <div class="section-title" style="margin-top: 24px;">Settings</div>
+            <div class="app-grid">
+                <a href="admin.html" class="app-btn admin full" id="adminBtn" style="display: none;">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <div class="content">
+                        <div class="title">Team Admin</div>
+                        <div class="desc">Roster, settings, and backups</div>
+                    </div>
+                </a>
+                
+                <a href="guide.html" class="app-btn guide full">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <div class="content">
+                        <div class="title">User Guide</div>
+                        <div class="desc">How to use Scout Tracker</div>
+                    </div>
+                </a>
+            </div>
         </div>
     </main>
     
     <footer class="footer">
-        <p>Scout Tracker v2.0</p>
-        <p>Data syncs across devices with the same team code</p>
-        <p style="margin-top: 12px;"><a href="guide.html" style="color: #90cdf4;">📖 User Guide</a></p>
+        <p><strong>Scout Tracker</strong> v2.0 — Real-time sync across devices</p>
+        <p style="margin-top: 8px;"><a href="guide.html">📖 User Guide</a></p>
     </footer>
 
 <script>
-// Team Code Management
 let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
 
 function updateTeamDisplay() {
@@ -409,25 +537,22 @@ function updateTeamDisplay() {
         display.classList.remove('empty');
         inputRow.style.display = 'none';
         changeRow.style.display = 'flex';
-        // Show admin button when team is set
-        if (adminBtn) adminBtn.style.display = 'flex';
+        adminBtn.style.display = 'flex';
     } else {
         display.textContent = 'Not Set';
         display.classList.add('empty');
         inputRow.style.display = 'flex';
         changeRow.style.display = 'none';
-        // Hide admin button when no team
-        if (adminBtn) adminBtn.style.display = 'none';
+        adminBtn.style.display = 'none';
     }
 }
 
 function setTeamCode() {
-    const input = document.getElementById('teamInput').value.trim().toLowerCase();
+    const input = document.getElementById('teamCodeInput').value.trim().toLowerCase();
     if (input.length < 3) {
         alert('Please enter a team code (at least 3 characters)');
         return;
     }
-    // Sanitize: only allow letters, numbers, hyphens
     const sanitized = input.replace(/[^a-z0-9-]/g, '');
     if (sanitized !== input) {
         alert('Team code can only contain letters, numbers, and hyphens');
@@ -435,102 +560,43 @@ function setTeamCode() {
     }
     currentTeamCode = sanitized;
     localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
-    document.getElementById('teamInput').value = '';
     updateTeamDisplay();
 }
 
-function showTeamInput() {
-    document.getElementById('teamInputRow').style.display = 'flex';
-    document.getElementById('teamChangeRow').style.display = 'none';
-    document.getElementById('teamInput').focus();
-}
-
-// Initialize
-updateTeamDisplay();
-
-// Enter key support for team input
-document.getElementById('teamInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') setTeamCode();
-});
-
-// Offline detection
-function updateOnlineStatus() {
-    const banner = document.getElementById('offlineBanner');
-    if (!navigator.onLine) {
-        banner.classList.add('visible');
-    } else {
-        banner.classList.remove('visible');
+function switchTeam() {
+    if (confirm('Switch to a different team?')) {
+        currentTeamCode = null;
+        localStorage.removeItem('scoutTrackerTeamCode');
+        updateTeamDisplay();
+        document.getElementById('teamCodeInput').value = '';
     }
 }
 
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-updateOnlineStatus();
+document.addEventListener('DOMContentLoaded', updateTeamDisplay);
+document.getElementById('teamCodeInput').addEventListener('keyup', e => { if (e.key === 'Enter') setTeamCode(); });
 
-// Service Worker Registration
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then((registration) => {
-                console.log('SW registered:', registration.scope);
-                
-                // Check for updates
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version available
-                            if (confirm('New version available! Refresh to update?')) {
-                                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                                window.location.reload();
-                            }
-                        }
-                    });
-                });
-            })
-            .catch((err) => {
-                console.log('SW registration failed:', err);
-            });
-    });
-}
+window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('visible'));
+window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('visible'));
+if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('visible');
 
-// PWA Install Prompt
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(console.error);
+
 let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
+window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    
-    // Show install prompt if not dismissed before
-    if (!localStorage.getItem('installPromptDismissed')) {
-        document.getElementById('installPrompt').classList.add('visible');
-    }
+    document.getElementById('installPrompt').classList.add('visible');
 });
 
 function installApp() {
     if (deferredPrompt) {
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                console.log('User accepted install');
-            }
+        deferredPrompt.userChoice.then(() => {
             deferredPrompt = null;
             document.getElementById('installPrompt').classList.remove('visible');
         });
     }
 }
-
-function dismissInstall() {
-    document.getElementById('installPrompt').classList.remove('visible');
-    localStorage.setItem('installPromptDismissed', 'true');
-}
-
-// Check if already installed
-window.addEventListener('appinstalled', () => {
-    console.log('App installed');
-    document.getElementById('installPrompt').classList.remove('visible');
-});
 </script>
-
 </body>
 </html>

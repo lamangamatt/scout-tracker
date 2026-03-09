@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Tracker - Baseball Analytics</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #e53e3e;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, #2c5282 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 40px 20px 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .logo {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 1em;
+            opacity: 0.85;
+        }
+        
+        .container {
+            flex: 1;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Team Code Section */
+        .team-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+            color: white;
+        }
+        
+        .team-section .label {
+            font-size: 0.85em;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        
+        .team-code-display {
+            font-size: 1.5em;
+            font-weight: 700;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 12px;
+            min-width: 150px;
+        }
+        
+        .team-code-display.empty {
+            color: rgba(255,255,255,0.5);
+            font-style: italic;
+            font-weight: 400;
+        }
+        
+        .team-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .team-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .team-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .team-input:focus {
+            outline: none;
+            border-color: white;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .team-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .team-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .team-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        /* App Buttons */
+        .app-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .app-btn {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            text-decoration: none;
+            color: var(--dark);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .app-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .app-btn .icon {
+            font-size: 2.5em;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+        
+        .app-btn.entry .icon { background: #ebf8ff; }
+        .app-btn.coach .icon { background: #f0fff4; }
+        .app-btn.bullpen .icon { background: #faf5ff; }
+        .app-btn.history .icon { background: #fffbeb; }
+        .app-btn.opponents .icon { background: #fed7e2; }
+        .app-btn.scouting .icon { background: #e9d8fd; }
+        .app-btn.stats .icon { background: #c6f6d5; }
+        
+        .app-btn .content {
+            flex: 1;
+        }
+        
+        .app-btn .title {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .app-btn .desc {
+            font-size: 0.85em;
+            color: #718096;
+            line-height: 1.4;
+        }
+        
+        .app-btn .arrow {
+            font-size: 1.5em;
+            color: #a0aec0;
+        }
+        
+        /* Footer */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85em;
+        }
+        
+        .footer a {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        /* Offline Banner */
+        .offline-banner {
+            display: none;
+            background: var(--warning);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .offline-banner.visible {
+            display: block;
+        }
+        
+        /* Install Prompt */
+        .install-prompt {
+            display: none;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .install-prompt.visible {
+            display: block;
+        }
+        
+        .install-prompt p {
+            margin-bottom: 12px;
+            font-size: 0.9em;
+        }
+        
+        .install-prompt button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 4px;
+        }
+        
+        .install-prompt .install-btn {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .install-prompt .dismiss-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-banner" id="offlineBanner">
+        ⚠️ You're offline - data is saved locally
+    </div>
+    
+    <header class="header">
+        <div class="logo">⚾</div>
+        <h1>Scout Tracker</h1>
+        <p>Real-time pitch tracking & analytics</p>
+    </header>
+    
+    <main class="container">
+        <!-- Install Prompt -->
+        <div class="install-prompt" id="installPrompt">
+            <p>📱 Install Scout Tracker for quick access</p>
+            <button class="install-btn" onclick="installApp()">Add to Home Screen</button>
+            <button class="dismiss-btn" onclick="dismissInstall()">Later</button>
+        </div>
+        
+        <!-- Team Code Section -->
+        <div class="team-section">
+            <div class="label">Your Team</div>
+            <div class="team-code-display" id="teamDisplay">Not Set</div>
+            <div class="team-input-row" id="teamInputRow">
+                <input type="text" class="team-input" id="teamInput" placeholder="Enter team code..." autocapitalize="none" autocorrect="off">
+                <button class="team-btn" onclick="setTeamCode()">Set</button>
+            </div>
+            <div class="team-input-row" id="teamChangeRow" style="display: none;">
+                <button class="team-btn secondary" onclick="showTeamInput()">Change Team</button>
+            </div>
+        </div>
+        
+        <!-- App Buttons -->
+        <div class="app-buttons">
+            <a href="entry.html" class="app-btn entry">
+                <div class="icon">📝</div>
+                <div class="content">
+                    <div class="title">Data Entry</div>
+                    <div class="desc">Log pitches in real-time during games. Track pitch type, location, and results.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="coach.html" class="app-btn coach">
+                <div class="icon">📊</div>
+                <div class="content">
+                    <div class="title">Coach View</div>
+                    <div class="desc">Live dashboard with pitch predictions, tendencies, and actionable insights.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="bullpen.html" class="app-btn bullpen">
+                <div class="icon">🎯</div>
+                <div class="content">
+                    <div class="title">Bullpen Tracker</div>
+                    <div class="desc">Track bullpen sessions with velocity, pitch types, and command ratings.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="history.html" class="app-btn history">
+                <div class="icon">📜</div>
+                <div class="content">
+                    <div class="title">Game History</div>
+                    <div class="desc">View past games, pitch logs, pitcher stats, and detailed breakdowns.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="opponents.html" class="app-btn opponents">
+                <div class="icon">🔍</div>
+                <div class="content">
+                    <div class="title">Opponents</div>
+                    <div class="desc">Track opponent teams, batters, pitchers, and their tendencies.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="scouting.html" class="app-btn scouting">
+                <div class="icon">📋</div>
+                <div class="content">
+                    <div class="title">Scouting Report</div>
+                    <div class="desc">Pre-game scouting reports. View and share opponent analysis.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="stats.html" class="app-btn stats">
+                <div class="icon">📊</div>
+                <div class="content">
+                    <div class="title">Stats Dashboard</div>
+                    <div class="desc">Comprehensive batting and pitching stats. Charts and trends.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="admin.html" class="app-btn admin" id="adminBtn" style="display: none;">
+                <div class="icon" style="background: #f7fafc;">⚙️</div>
+                <div class="content">
+                    <div class="title">Team Admin</div>
+                    <div class="desc">Manage roster, coaches, settings, and data backups.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="guide.html" class="app-btn guide">
+                <div class="icon" style="background: #ebf8ff;">❓</div>
+                <div class="content">
+                    <div class="title">User Guide</div>
+                    <div class="desc">Complete documentation for all features and how to use them.</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>Scout Tracker v2.0</p>
+        <p>Data syncs across devices with the same team code</p>
+        <p style="margin-top: 12px;"><a href="guide.html" style="color: #90cdf4;">📖 User Guide</a></p>
+    </footer>
+
+<script>
+// Team Code Management
+let currentTeamCode = localStorage.getItem('scoutTrackerTeamCode') || null;
+
+function updateTeamDisplay() {
+    const display = document.getElementById('teamDisplay');
+    const inputRow = document.getElementById('teamInputRow');
+    const changeRow = document.getElementById('teamChangeRow');
+    const adminBtn = document.getElementById('adminBtn');
+    
+    if (currentTeamCode) {
+        display.textContent = currentTeamCode.toUpperCase();
+        display.classList.remove('empty');
+        inputRow.style.display = 'none';
+        changeRow.style.display = 'flex';
+        // Show admin button when team is set
+        if (adminBtn) adminBtn.style.display = 'flex';
+    } else {
+        display.textContent = 'Not Set';
+        display.classList.add('empty');
+        inputRow.style.display = 'flex';
+        changeRow.style.display = 'none';
+        // Hide admin button when no team
+        if (adminBtn) adminBtn.style.display = 'none';
+    }
+}
+
+function setTeamCode() {
+    const input = document.getElementById('teamInput').value.trim().toLowerCase();
+    if (input.length < 3) {
+        alert('Please enter a team code (at least 3 characters)');
+        return;
+    }
+    // Sanitize: only allow letters, numbers, hyphens
+    const sanitized = input.replace(/[^a-z0-9-]/g, '');
+    if (sanitized !== input) {
+        alert('Team code can only contain letters, numbers, and hyphens');
+        return;
+    }
+    currentTeamCode = sanitized;
+    localStorage.setItem('scoutTrackerTeamCode', currentTeamCode);
+    document.getElementById('teamInput').value = '';
+    updateTeamDisplay();
+}
+
+function showTeamInput() {
+    document.getElementById('teamInputRow').style.display = 'flex';
+    document.getElementById('teamChangeRow').style.display = 'none';
+    document.getElementById('teamInput').focus();
+}
+
+// Initialize
+updateTeamDisplay();
+
+// Enter key support for team input
+document.getElementById('teamInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') setTeamCode();
+});
+
+// Offline detection
+function updateOnlineStatus() {
+    const banner = document.getElementById('offlineBanner');
+    if (!navigator.onLine) {
+        banner.classList.add('visible');
+    } else {
+        banner.classList.remove('visible');
+    }
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('SW registered:', registration.scope);
+                
+                // Check for updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New version available
+                            if (confirm('New version available! Refresh to update?')) {
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                window.location.reload();
+                            }
+                        }
+                    });
+                });
+            })
+            .catch((err) => {
+                console.log('SW registration failed:', err);
+            });
+    });
+}
+
+// PWA Install Prompt
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show install prompt if not dismissed before
+    if (!localStorage.getItem('installPromptDismissed')) {
+        document.getElementById('installPrompt').classList.add('visible');
+    }
+});
+
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted install');
+            }
+            deferredPrompt = null;
+            document.getElementById('installPrompt').classList.remove('visible');
+        });
+    }
+}
+
+function dismissInstall() {
+    document.getElementById('installPrompt').classList.remove('visible');
+    localStorage.setItem('installPromptDismissed', 'true');
+}
+
+// Check if already installed
+window.addEventListener('appinstalled', () => {
+    console.log('App installed');
+    document.getElementById('installPrompt').classList.remove('visible');
+});
+</script>
+
+</body>
+</html>
